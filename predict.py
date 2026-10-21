@@ -10,7 +10,8 @@ from rasterio.transform import from_origin
 from rasterio.crs import CRS
 from data import synthetic_scene
 from geo_io import (BandData, load_any_user_image, load_band_stack, render_rgb, stretch_limits,
-    pixel_area_m2, output_valid_mask, write_geotiff, write_single_band_geotiff, save_image, save_text)
+    pixel_area_m2, output_valid_mask, write_geotiff, write_single_band_geotiff, save_image, save_text,
+    derived_note)
 from models.rcan import L1BSRSR
 from models.unet_segmentation import LandCoverSegmenter
 from models.evaluation_metrics import compute_full_sr_evaluation, segmentation_metrics
@@ -105,15 +106,17 @@ def run_prediction(args):
         if stage.parent != output.parent:
             raise ValueError("Invalid inference workspace")
         save_image(stage/"input.png",input_rgb,ref.valid_mask)
-        save_image(stage/"enhanced.png",rgb,valid)
+        note = derived_note("RCAN ("+sr.provenance+")" if sr.weights_loaded else "bicubic baseline")
+        report["enhanced_imagery"] = note
+        save_image(stage/"enhanced.png",rgb,valid,description=note)
         save_image(stage/"land_cover.png",result["color_map"],valid)
         overlay = (rgb*.45+result["color_map"]*.55).astype(np.uint8); overlay[~valid] = 0
-        save_image(stage/"overlay.png",overlay,valid)
+        save_image(stage/"overlay.png",overlay,valid,description=note)
         score = np.nan_to_num(result["confidence_map"],nan=0.)
         Image.fromarray((score*255).astype(np.uint8)).save(stage/"confidence.png")
         np.save(stage/"class_ids.npy",result["class_map"]); np.save(stage/"confidence.npy",result["confidence_map"])
         if ref.crs:
-            write_geotiff(stage/"enhanced.tif",enhanced,ref)
+            write_geotiff(stage/"enhanced.tif",enhanced,ref,sr_model="RCAN ("+sr.provenance+")" if sr.weights_loaded else "bicubic baseline")
             write_single_band_geotiff(stage/"land_cover.tif",result["class_map"],ref)
         if truth is not None:
             save_image(stage/"ground_truth.png",render_rgb(truth,ref))

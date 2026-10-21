@@ -10,6 +10,7 @@ import rasterio
 from rasterio.enums import ColorInterp, Resampling
 from rasterio.transform import Affine
 from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL.PngImagePlugin import PngInfo
 
 BAND_ORDER = ("B02", "B03", "B04", "B08")
 IMAGE_EXTENSIONS = {".png":"PNG", ".jpg":"JPEG", ".jpeg":"JPEG", ".bmp":"BMP",
@@ -320,7 +321,27 @@ def _atomic_write(path, writer):
         Path(str(temp)+".msk").unlink(missing_ok=True)
 
 
-def save_image(path, rgb, valid_mask=None):
+def derived_note(model="RCAN"):
+    """Label for every super-resolved export: it is a model estimate, not an observation."""
+    return (f"DERIVED IMAGE: 2x super-resolution estimate by {model}. Not measured imagery; "
+            "the sensor's native resolution is unchanged and added detail may be inaccurate.")
+
+
+def _image_metadata(suffix, description):
+    """PNG text chunks or JPEG EXIF ImageDescription carrying the derived-image label."""
+    if not description:
+        return {}
+    if suffix == ".png":
+        info = PngInfo()
+        info.add_text("Description", description)
+        info.add_text("Derived", "true")
+        return {"pnginfo": info}
+    exif = Image.Exif()
+    exif[0x010E] = description  # ImageDescription
+    return {"exif": exif}
+
+
+def save_image(path, rgb, valid_mask=None, description=None):
     path = resolve_output_path(path, {".png", ".jpg", ".jpeg"}, ".png")
     rgb = np.asarray(rgb)
     if rgb.dtype != np.uint8 or rgb.ndim != 3 or rgb.shape[2] != 3 or rgb.size == 0:
@@ -332,8 +353,9 @@ def save_image(path, rgb, valid_mask=None):
             raise ValueError("Output mask shape mismatch")
         if not valid.all():
             image.putalpha(Image.fromarray(valid.astype(np.uint8)*255))
-    _atomic_write(path, lambda temp: image.save(temp, format="PNG" if path.suffix.lower() == ".png" else "JPEG",
-                  **({"quality":95, "subsampling":0} if path.suffix.lower() != ".png" else {})))
+    suffix = ".png" if path.suffix.lower() == ".png" else ".jpg"
+    options = dict(_image_metadata(suffix, description), **({"quality":95, "subsampling":0} if suffix == ".jpg" else {}))
+    _atomic_write(path, lambda temp: image.save(temp, format="PNG" if suffix == ".png" else "JPEG", **options))
     return path
 
 
@@ -377,7 +399,7 @@ def _atomic_bundle(items):
             raise
 
 
-def write_geotiff(out_path, data, ref, scale=None):
+def write_geotiff(out_path, data, ref, scale=None, sr_model="RCAN"):
     path = resolve_output_path(out_path, {".tif", ".tiff"}, ".tif")
     data = np.asarray(data)
     if ref.crs is None:
@@ -385,10 +407,17 @@ def write_geotiff(out_path, data, ref, scale=None):
     if data.dtype != np.uint16 or data.ndim != 3 or data.shape[2] != 4 or data.size == 0:
         raise ValueError("Enhanced GeoTIFF must be HxWx4 uint16")
     valid = output_valid_mask(ref, data.shape)
+    out_transform = output_transform(ref, data.shape)
+    units = "m" if ref.crs.is_projected else "degrees"
+    derived = dict(TIFFTAG_IMAGEDESCRIPTION=derived_note(sr_model), derived_product="true",
+                   product_type="AI super-resolved estimate (not measured reflectance at this pixel size)",
+                   sr_model=str(sr_model),
+                   native_pixel_size=f"{abs(ref.transform.a):g} {units}",
+                   output_pixel_size=f"{abs(out_transform.a):g} {units}")
     def write(temp):
         with rasterio.Env(GDAL_TIFF_INTERNAL_MASK=True):
             with rasterio.open(temp, "w", driver="GTiff", height=data.shape[0], width=data.shape[1],
-                               count=4, dtype="uint16", crs=ref.crs, transform=output_transform(ref, data.shape), compress="lzw") as dst:
+                               count=4, dtype="uint16", crs=ref.crs, transform=out_transform, compress="lzw") as dst:
                 bands = np.moveaxis(data, -1, 0).copy(); bands[:, ~valid] = 0
                 dst.write(bands); dst.write_mask(valid.astype(np.uint8)*255)
                 dst.scales = (.0001,)*4; dst.offsets = (0.,)*4
@@ -396,7 +425,8 @@ def write_geotiff(out_path, data, ref, scale=None):
                     dst.set_band_description(i+1, key)
                 source = {key:value for key,value in (ref.source_metadata or {}).items() if key in
                           ("satellite","acquisition_datetime","stac_item_id","stac_item_url","attribution","location")}
-                dst.update_tags(**source,source_kind=ref.source_kind,calibration="reflectance = stored value / 10000")
+                dst.update_tags(**source,source_kind=ref.source_kind,calibration="reflectance = stored value / 10000",
+                                **derived)
     _atomic_write(path, write)
     Path(str(path)+".msk").unlink(missing_ok=True)
     return path
@@ -424,7 +454,7 @@ def write_single_band_geotiff(out_path, data_u8, ref, scale=None):
     return path
 
 
-def save_jpeg_with_jgw(path, rgb, ref):
+def save_jpeg_with_jgw(path, rgb, ref, description=None):
     path = resolve_output_path(path, {".jpg", ".jpeg"}, ".jpg")
     if ref.crs is None:
         raise ValueError("World files require georeferenced inputs")
@@ -435,7 +465,8 @@ def save_jpeg_with_jgw(path, rgb, ref):
     if rgb.dtype != np.uint8 or rgb.ndim != 3 or rgb.shape[2] != 3 or rgb.size == 0:
         raise ValueError("JPEG output requires RGB uint8")
     world_text = "".join(f"{v:.12f}\n" for v in world)
-    _atomic_bundle([(path,lambda temp:Image.fromarray(rgb).save(temp,format="JPEG",quality=95,subsampling=0)),
+    metadata = _image_metadata(".jpg", description)
+    _atomic_bundle([(path,lambda temp:Image.fromarray(rgb).save(temp,format="JPEG",quality=95,subsampling=0,**metadata)),
                     (path.with_suffix(".jgw"),lambda temp:temp.write_text(world_text,encoding="utf-8")),
                     (path.with_suffix(".prj"),lambda temp:temp.write_text(ref.crs.to_wkt(),encoding="utf-8"))])
     return path

@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QPushBu
     QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QLineEdit, QMessageBox,
     QFrame, QScrollArea, QFormLayout, QCheckBox, QSlider)
 from geo_io import (BandData, read_band, write_geotiff, save_jpeg_with_jgw, percentile_stretch,
-    load_any_user_image, stack_loaded_bands, render_rgb, output_valid_mask, IMAGE_FILTER, save_image)
+    load_any_user_image, stack_loaded_bands, render_rgb, output_valid_mask, IMAGE_FILTER, save_image, derived_note)
 from gui_support import JobMixin, open_image_dialog, save_dialog
 from onnx_engine import ONNXModel, to_numpy_4ch, from_numpy_to_u16
 
@@ -281,7 +281,7 @@ class MainWindow(QMainWindow, JobMixin):
         path = save_dialog(self, "Save GeoTIFF", "output_sr.tif", "GeoTIFF (*.tif *.tiff)")
         if path:
             try:
-                write_geotiff(path, self.result_u16_hwc, self.ref_band)
+                write_geotiff(path, self.result_u16_hwc, self.ref_band, sr_model="RCAN (ONNX)")
                 self.lbl_status.setText("Saved "+path)
             except Exception as error:
                 QMessageBox.critical(self, "Save failed", str(error))
@@ -292,7 +292,7 @@ class MainWindow(QMainWindow, JobMixin):
         path = save_dialog(self, "Save JPEG + JGW + PRJ", "output_sr.jpg", "JPEG (*.jpg *.jpeg)")
         if path:
             try:
-                save_jpeg_with_jgw(path, self._preview_rgb(), self.ref_band)
+                save_jpeg_with_jgw(path, self._preview_rgb(), self.ref_band, description=derived_note("RCAN (ONNX)"))
                 self.lbl_status.setText("Saved JPEG, world file and CRS")
             except Exception as error:
                 QMessageBox.critical(self, "Save failed", str(error))
@@ -303,7 +303,8 @@ class MainWindow(QMainWindow, JobMixin):
         path = save_dialog(self, "Save image", "output_sr.png", "PNG (*.png);;JPEG (*.jpg *.jpeg)")
         if path:
             try:
-                save_image(path, self._preview_rgb(), output_valid_mask(self.ref_band, self.result_u16_hwc.shape))
+                save_image(path, self._preview_rgb(), output_valid_mask(self.ref_band, self.result_u16_hwc.shape),
+                           description=derived_note("RCAN (ONNX)"))
                 self.lbl_status.setText("Saved "+path)
             except Exception as error:
                 QMessageBox.critical(self, "Save failed", str(error))

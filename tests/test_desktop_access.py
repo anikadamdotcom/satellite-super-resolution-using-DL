@@ -198,12 +198,20 @@ class DownloadAccessTests(unittest.TestCase):
                 self.assertNotIn("enhanced.tif",archive.namelist())
                 self.assertNotIn("enhanced.prj",archive.namelist())
                 self.assertIn("enhanced_bands.npy",archive.namelist())
+                self.assertIn("difference_from_bicubic.png",archive.namelist())
+                with Image.open(io.BytesIO(archive.read("enhanced.png"))) as img:
+                    self.assertEqual(img.info.get("Derived"),"true")
+                    self.assertIn("DERIVED IMAGE",img.info["Description"])
             self.window._show_view("compare")
             with patch.object(self.gui,"save_dialog",return_value=str(folder/"compare.png")):
                 self.window.btn_save_view.click()
             h,w = self.window.sr_bgrn.shape[:2]
             with Image.open(folder/"compare.png") as img:
-                self.assertEqual(img.size,(w*2+8,h))
+                # original | enhanced | change vs bicubic, plus a caption strip
+                self.assertEqual(img.size[0],w*3+16)
+                self.assertGreater(img.size[1],h)
+                self.assertEqual(img.info.get("Derived"),"true")
+            self.assertIn("Change vs bicubic",self.window._report_text())
             with patch.object(self.gui,"save_dialog",return_value=str(folder/"scores.png")):
                 self.window.btn_save_scores.click()
             self.assertTrue((folder/"scores.png").is_file())

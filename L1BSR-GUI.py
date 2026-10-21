@@ -80,7 +80,9 @@ def rgb_to_qpixmap(img):
 
 
 from gui_support import JobMixin, open_image_dialog, save_dialog, folder_dialog
-from results_export import export_results_zip, score_rgb
+from results_export import (export_results_zip, score_rgb, difference_from_bicubic,
+                            difference_rgb, compose_compare)
+from geo_io import derived_note
 
 
 STYLE = """
@@ -259,6 +261,8 @@ class MainWindow(QMainWindow, JobMixin):
         self.rgb_lr: Optional[np.ndarray] = None
         self.sr_bgrn: Optional[np.ndarray] = None
         self.bicubic_bgrn: Optional[np.ndarray] = None
+        self.diff_magnitude: Optional[np.ndarray] = None
+        self.diff_stats: Optional[Dict] = None
         self.rgb_sr_base: Optional[np.ndarray] = None
         self.seg: Optional[Dict] = None
         self.metrics: Optional[Dict] = None
@@ -596,6 +600,19 @@ class MainWindow(QMainWindow, JobMixin):
             return np.array(Image.fromarray(self.rgb_lr).resize((w, h), Image.BICUBIC))
         return self.rgb_lr
 
+    def _sr_label(self) -> str:
+        if self.sr_engine is None or not self.sr_engine.weights_loaded:
+            return "bicubic baseline (no SR model loaded)"
+        return f"RCAN ({self.sr_engine.provenance})"
+
+    def _compare(self):
+        """Original | enhanced | change vs bicubic, plus its validity mask."""
+        enh = self._enhanced_rgb()
+        if enh is None or self.diff_magnitude is None:
+            return None
+        valid = output_valid_mask(self.ref_band, self.sr_bgrn.shape)
+        return compose_compare(self._original_scaled(), enh, difference_rgb(self.diff_magnitude, valid), valid)
+
     def _view_array(self, key: str):
         arr = None
         if key == "original":
@@ -603,11 +620,9 @@ class MainWindow(QMainWindow, JobMixin):
         elif key == "enhanced":
             arr = self._enhanced_rgb()
         elif key == "compare":
-            enh = self._enhanced_rgb()
-            if enh is not None:
-                orig = self._original_scaled()
-                gap = np.full((enh.shape[0], 8, 3), 255, dtype=np.uint8)
-                arr = np.concatenate([orig, gap, enh], axis=1)
+            compare = self._compare()
+            if compare is not None:
+                arr = compare[0]
         elif key == "confidence" and self.seg is not None:
             arr = score_rgb(self.seg["confidence_map"])
         elif key == "map" and self.seg is not None:
@@ -645,6 +660,7 @@ class MainWindow(QMainWindow, JobMixin):
 
     def _reset_results(self):
         self.sr_bgrn = self.bicubic_bgrn = self.rgb_sr_base = None
+        self.diff_magnitude = self.diff_stats = None
         self.seg = self.metrics = self.conf = None
 
     def load_file(self, path):
@@ -781,19 +797,23 @@ class MainWindow(QMainWindow, JobMixin):
             sr[~valid] = 0
             bicubic[~valid] = 0
             metrics = compute_full_sr_evaluation(image, bicubic, sr, valid_mask=valid)
-            return sr, bicubic, metrics
+            magnitude, diff_stats = difference_from_bicubic(sr, bicubic, valid)
+            return sr, bicubic, metrics, magnitude, diff_stats
         self._start_job(operation, self._enhance_done, "Running super-resolution...")
 
     def _enhance_done(self, result):
-        sr, bicubic, metrics = result
+        sr, bicubic, metrics, magnitude, diff_stats = result
         rgb = render_rgb(sr, self.ref_band)
         self.sr_bgrn, self.bicubic_bgrn, self.metrics, self.rgb_sr_base = sr, bicubic, metrics, rgb
+        self.diff_magnitude, self.diff_stats = magnitude, diff_stats
         self.seg = self.conf = None
         self._busy(False)
         h, w = self.sr_bgrn.shape[:2]
         self.lbl_model.setText("Enhancement: " + self.sr_engine.provenance + "\nDetection: " + self.seg_engine.provenance)
         method = "RCAN" if self.sr_engine.weights_loaded else "bicubic baseline"
-        self.lbl_status.setText(f"{method}: {w} x {h} px. Scores compare with bicubic; no HR ground truth.")
+        self.lbl_status.setText(f"{method}: {w} x {h} px, a derived estimate. Right panel: where it differs from "
+                                f"bicubic ({diff_stats['changed_pct']}% of pixels by >0.01 reflectance); "
+                                "change is not proof of real detail.")
         self._show_view("compare")
         if self._detect_after_enhance:
             self._detect_after_enhance = False
@@ -863,11 +883,11 @@ class MainWindow(QMainWindow, JobMixin):
             if key == "original":
                 valid = self.ref_band.valid_mask
             elif key == "compare":
-                one = output_valid_mask(self.ref_band, self.sr_bgrn.shape)
-                valid = np.concatenate([one, np.ones((one.shape[0], 8), bool), one], axis=1)
+                arr, valid = self._compare()
             else:
                 valid = output_valid_mask(self.ref_band, arr.shape)
-            save_image(path, arr, valid)
+            derived = key in ("enhanced", "compare", "overlay")
+            save_image(path, arr, valid, description=derived_note(self._sr_label()) if derived else None)
             self.lbl_status.setText(f"Saved {os.path.basename(path)}")
         except Exception as error:
             QMessageBox.critical(self, "Could not save", str(error))
@@ -894,7 +914,8 @@ class MainWindow(QMainWindow, JobMixin):
             return
         args = (path, self.rgb_lr, self._enhanced_rgb(), self.sr_bgrn, self.ref_band,
                 self.seg, self._report_text(), self._report_data())
-        self._start_job(lambda: export_results_zip(*args),
+        extra = dict(bicubic_bands=self.bicubic_bgrn, sr_model=self._sr_label())
+        self._start_job(lambda: export_results_zip(*args, **extra),
                         lambda saved: self.lbl_status.setText(f"Downloaded all results: {saved}"),
                         "Preparing all results for download...")
 
@@ -909,7 +930,8 @@ class MainWindow(QMainWindow, JobMixin):
         if not path:
             return
         try:
-            path = str(save_image(path, arr, output_valid_mask(self.ref_band, arr.shape)))
+            path = str(save_image(path, arr, output_valid_mask(self.ref_band, arr.shape),
+                                  description=derived_note(self._sr_label())))
             self.lbl_status.setText(f"Saved {os.path.basename(path)}")
         except Exception as e:
             QMessageBox.critical(self, "Could not save", str(e))
@@ -942,7 +964,7 @@ class MainWindow(QMainWindow, JobMixin):
         if not path:
             return
         try:
-            write_geotiff(path, self.sr_bgrn, self.ref_band)
+            write_geotiff(path, self.sr_bgrn, self.ref_band, sr_model=self._sr_label())
             self.lbl_status.setText(f"Saved {os.path.basename(path)}")
         except Exception as e:
             QMessageBox.critical(self, "Could not save", str(e))
@@ -953,6 +975,8 @@ class MainWindow(QMainWindow, JobMixin):
                     sr_model_source=self.sr_engine.provenance if self.sr_engine else "not run",
                     segmentation_model_source=self.seg_engine.provenance if self.seg_engine else "not run",
                     device=str(self.device), metrics=self.metrics,
+                    difference_from_bicubic=self.diff_stats,
+                    enhanced_imagery=derived_note(self._sr_label()) if self.sr_bgrn is not None else None,
                     statistics=self.seg["statistics"] if self.seg else None,
                     confidence_note=self.seg["confidence_note"] if self.seg else None,
                     detection_details={key:self.seg[key] for key in ("method", "prediction_source", "prediction_input_shape",
@@ -982,6 +1006,13 @@ class MainWindow(QMainWindow, JobMixin):
                       f"- SAM: {m['sam_degrees']} degrees", f"- Edge detail gain: {m['edge_gain_pct']:+}%"]
         else:
             lines.append("- Not run.")
+        if self.diff_stats:
+            d = self.diff_stats
+            lines += [f"- Change vs bicubic: mean {d['mean_reflectance']} reflectance, 95th percentile "
+                      f"{d['p95_reflectance']}; {d['changed_pct']}% of pixels changed by more than 0.01",
+                      "", "## Enhanced imagery is derived",
+                      f"- {derived_note(self._sr_label())}",
+                      "- Enhanced PNG/JPEG/GeoTIFF files carry this label in their metadata."]
         lines += ["", "## Model and input provenance",
                   f"- Super-resolution: {self.sr_engine.provenance if self.sr_engine else 'not run'}",
                   f"- Segmentation: {self.seg_engine.provenance if self.seg_engine else 'not run'}",
