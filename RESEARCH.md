@@ -1,6 +1,6 @@
 # Research Review: Deep-Learning Super-Resolution and Land-Cover Mapping from Sentinel-2
 
-A literature and background review for this project, compiled October 2026. It covers the problem, the methods, the datasets, how results are judged, the land-cover side, and where this project sits. Every external claim links to its source in the [References](#references). Numbers quoted from other papers come from their abstracts or project pages; check the full paper before citing a figure in the final report.
+A literature and background review for this project, compiled October 2026. It covers the problem, the methods, the datasets, how results are judged, the land-cover side, and where this project sits. For competitors, a timeline of prior work and the 2025–2026 research frontier, see [RESEARCH_LANDSCAPE.md](RESEARCH_LANDSCAPE.md). Every external claim links to its source in the [References](#references). Numbers quoted from other papers come from their abstracts or project pages; check the full paper before citing a figure in the final report.
 
 ---
 
