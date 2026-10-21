@@ -61,6 +61,8 @@ screen1 (Medium).png
 datasets/
 raw_data/
 checkpoints/real/
+# External comparison weights (re-download with download_sen2sr.py)
+checkpoints/external/
 
 # ==============================================================================
 # Explicitly Tracked Deliverables (Do Not Ignore)
