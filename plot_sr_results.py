@@ -55,8 +55,7 @@ def summary_figure():
         methods = [m for m in ("native", "bicubic", "rcan", "sen2sr") if m in mapping]
         bars(ax, methods, [100*mapping[m]["mean_iou"]["mean"] for m in methods],
              [100*mapping[m]["mean_iou"]["std"] for m in methods], fmt="{:.1f}%")
-        low = min(100*mapping[m]["mean_iou"]["mean"] for m in methods)
-        ax.set_ylim(max(0, low-12), None)
+        ax.set_ylim(0, 62)  # bars start at zero so small gaps are not exaggerated
         style(ax, "Land-cover mapping on held-out sites (8 sites)", "Mean IoU vs WorldCover (%)")
         ax.text(.0, -.2, "Same U-Net, labels and seeds for every input; bars = mean of 3 seeds, lines = spread.",
                 transform=ax.transAxes, fontsize=8, color=MUTED)
