@@ -71,9 +71,9 @@ python predict.py --image demo_images/high_resolution/palu_8.tif --detector hf -
 
 Both real models classify the original decoded image; RCAN enhancement is
 independent. Physical spectral checks require measured NIR. Sentinel-2's 10 m
-pixels cannot resolve many individual buildings or narrow roads. RCAN remains
-synthetic-trained and enlarges the display without establishing new observed
-ground detail. No new super-resolution accuracy claim is made.
+pixels cannot resolve many individual buildings or narrow roads. RCAN is now
+trained on real Sentinel-2/VENµS pairs (small measured gain over bicubic, see
+README) but still does not establish new observed ground detail.
 
 ## Source, conversion and preprocessing
 

@@ -1,0 +1,150 @@
+{
+  "split": "test",
+  "patches": 2000,
+  "provenance": {
+    "bicubic": "PyTorch bicubic interpolation",
+    "old_synthetic": "synthetic procedural demo (not real satellite validation) [checkpoints/demo/rcan.pt]",
+    "new_real": "SEN2VEN\u00b5S real Sentinel-2 10 m / VEN\u00b5S 5 m pairs (train sites: ATTO, ESTUAMAR, JAM2018, K34-AMAZ, LERIDA-1, MAD-AMBO, SUDOUE-4; val: ALSACE; test: BENGA, KUDALIAR) [checkpoints/real/runA/rcan.pt]"
+  },
+  "overall": {
+    "bicubic": {
+      "raw": {
+        "psnr_db": 39.081,
+        "ssim": 0.959,
+        "sam_degrees": 2.4476
+      },
+      "compensated": {
+        "psnr_db": 40.0874,
+        "ssim": 0.9664,
+        "sam_degrees": 1.9742
+      }
+    },
+    "old_synthetic": {
+      "raw": {
+        "psnr_db": 38.8338,
+        "ssim": 0.9557,
+        "sam_degrees": 2.5138,
+        "psnr_gain_vs_bicubic_db": -0.247,
+        "patches_better_than_bicubic": "16/2000"
+      },
+      "compensated": {
+        "psnr_db": 39.7951,
+        "ssim": 0.963,
+        "sam_degrees": 2.0619,
+        "psnr_gain_vs_bicubic_db": -0.292,
+        "patches_better_than_bicubic": "6/2000"
+      }
+    },
+    "new_real": {
+      "raw": {
+        "psnr_db": 39.1673,
+        "ssim": 0.9629,
+        "sam_degrees": 2.3375,
+        "psnr_gain_vs_bicubic_db": 0.086,
+        "patches_better_than_bicubic": "1303/2000"
+      },
+      "compensated": {
+        "psnr_db": 40.5547,
+        "ssim": 0.9697,
+        "sam_degrees": 1.8261,
+        "psnr_gain_vs_bicubic_db": 0.467,
+        "patches_better_than_bicubic": "1638/2000"
+      }
+    }
+  },
+  "per_site": {
+    "BENGA": {
+      "bicubic": {
+        "raw": {
+          "psnr_db": 37.2065,
+          "ssim": 0.9429,
+          "sam_degrees": 3.1277
+        },
+        "compensated": {
+          "psnr_db": 38.33,
+          "ssim": 0.9555,
+          "sam_degrees": 2.5129
+        }
+      },
+      "old_synthetic": {
+        "raw": {
+          "psnr_db": 37.0327,
+          "ssim": 0.9395,
+          "sam_degrees": 3.1702,
+          "psnr_gain_vs_bicubic_db": -0.174,
+          "patches_better_than_bicubic": "10/897"
+        },
+        "compensated": {
+          "psnr_db": 38.1145,
+          "ssim": 0.9519,
+          "sam_degrees": 2.5896,
+          "psnr_gain_vs_bicubic_db": -0.216,
+          "patches_better_than_bicubic": "1/897"
+        }
+      },
+      "new_real": {
+        "raw": {
+          "psnr_db": 37.5571,
+          "ssim": 0.9496,
+          "sam_degrees": 2.9014,
+          "psnr_gain_vs_bicubic_db": 0.351,
+          "patches_better_than_bicubic": "723/897"
+        },
+        "compensated": {
+          "psnr_db": 38.8103,
+          "ssim": 0.9604,
+          "sam_degrees": 2.2638,
+          "psnr_gain_vs_bicubic_db": 0.48,
+          "patches_better_than_bicubic": "811/897"
+        }
+      }
+    },
+    "KUDALIAR": {
+      "bicubic": {
+        "raw": {
+          "psnr_db": 40.6055,
+          "ssim": 0.972,
+          "sam_degrees": 1.8945
+        },
+        "compensated": {
+          "psnr_db": 41.5166,
+          "ssim": 0.9753,
+          "sam_degrees": 1.5362
+        }
+      },
+      "old_synthetic": {
+        "raw": {
+          "psnr_db": 40.2985,
+          "ssim": 0.9688,
+          "sam_degrees": 1.98,
+          "psnr_gain_vs_bicubic_db": -0.307,
+          "patches_better_than_bicubic": "6/1103"
+        },
+        "compensated": {
+          "psnr_db": 41.1618,
+          "ssim": 0.9721,
+          "sam_degrees": 1.6327,
+          "psnr_gain_vs_bicubic_db": -0.355,
+          "patches_better_than_bicubic": "5/1103"
+        }
+      },
+      "new_real": {
+        "raw": {
+          "psnr_db": 40.4767,
+          "ssim": 0.9737,
+          "sam_degrees": 1.8789,
+          "psnr_gain_vs_bicubic_db": -0.129,
+          "patches_better_than_bicubic": "580/1103"
+        },
+        "compensated": {
+          "psnr_db": 41.9732,
+          "ssim": 0.9772,
+          "sam_degrees": 1.4702,
+          "psnr_gain_vs_bicubic_db": 0.457,
+          "patches_better_than_bicubic": "827/1103"
+        }
+      }
+    }
+  },
+  "protocol": "Cross-sensor test: Sentinel-2 10 m -> VEN\u00b5S 5 m on held-out SEN2VEN\u00b5S sites.\n\nEvery method upsamples the real 10 m Sentinel-2 patch 2x and is scored against the real\nVEN\u00b5S 5 m patch acquired the same day. Two scorings are reported:\n\n- raw: direct comparison.\n- compensated: the prediction is shifted by the best integer offset (|d| <= 2 px at 5 m)\n  and each band's mean offset is removed before scoring. This takes out the known\n  Sentinel-2/VEN\u00b5S misregistration and band-response differences so that only spatial\n  detail is compared. Every method, bicubic included, gets the same treatment."
+}

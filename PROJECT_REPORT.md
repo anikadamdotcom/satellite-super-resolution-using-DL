@@ -49,7 +49,21 @@ Procedural scenes contain vegetation regions, soil, a meandering river, building
 
 U-Net learns from ground-truth HR features. For full pipeline evaluation, it receives reconstructed RCAN imagery. The untouched test set is evaluated once after checkpoint selection. Training losses, settings and test confusion matrices are retained in `checkpoints/demo/training_report.json`.
 
-## Measured held-out synthetic results
+## Real-data RCAN retraining (SEN2VENµS)
+
+The RCAN used by the app was retrained on real cross-sensor pairs: Sentinel-2 10 m patches and same-day VENµS 5 m references from SEN2VENµS. There are 7 training sites (11,745 patches) and 1 validation site (ALSACE). Two Indian sites, BENGA and KUDALIAR, are held out for testing. The architecture is unchanged. Because the two sensors are misregistered by about one 5 m pixel, training uses an L1 loss that removes the best small shift and per-band mean offset, plus a weak consistency term to the Sentinel-2 input. The checkpoint was selected on validation (epoch 6 of 80).
+
+| Held-out Indian sites (2,000 patches) | Bicubic | Synthetic RCAN | SEN2VENµS RCAN |
+| --- | ---: | ---: | ---: |
+| PSNR, raw | 39.08 dB | 38.83 dB | 39.17 dB |
+| PSNR, shift/bias compensated | 40.09 dB | 39.80 dB | 40.55 dB |
+| SSIM, compensated | 0.9664 | 0.9630 | 0.9697 |
+| SAM, compensated | 1.974° | 2.062° | 1.826° |
+| Patches better than bicubic (compensated) | n/a | 6 / 2000 | 1638 / 2000 |
+
+The synthetic model's 5.66 dB gain below did not transfer to real imagery. On real data it falls below bicubic. The real-trained model gives a small, consistent gain (+0.47 dB compensated, +0.09 dB raw). This is in line with published 2x results and does not mean sub-10 m objects are recovered. Details and commands are in README.md and `checkpoints/demo/rcan_training_report.json`.
+
+## Measured held-out synthetic results (original experiment; RCAN kept as `rcan_synthetic.pt`)
 
 | Metric | Bicubic | Trained RCAN |
 | --- | ---: | ---: |
@@ -87,7 +101,7 @@ The main application defaults to CPU and exposes a **Run without GPU (CPU)** tog
 
 ## Limitations and next work
 
-Real satellite validation requires independent geographic scenes, co-registered four-band HR references and five-class labels. Product-specific radiometric scaling and label remapping must be completed before ingestion. Models trained on this synthetic generator should not be used for operational mapping. Real data should assess class imbalance, boundaries, small objects, domain shift, confidence calibration and tile-context effects. SWIR features, segmentation training on reconstructed inputs, vectorization and geographically balanced evaluation are useful future extensions.
+Real satellite validation requires independent geographic scenes, co-registered four-band HR references and five-class labels. Product-specific radiometric scaling and label remapping must be completed before ingestion. Models trained on this synthetic generator should not be used for operational mapping. RCAN has since been retrained on real SEN2VENµS pairs (above); a larger training-site set, a larger RCAN and comparison with ESA SEN2SR on the same test are the next steps. Real data should assess class imbalance, boundaries, small objects, domain shift, confidence calibration and tile-context effects. SWIR features, segmentation training on reconstructed inputs, vectorization and geographically balanced evaluation are useful future extensions.
 
 ## Reproduction
 

@@ -49,6 +49,74 @@ def degrade(hr):
     return np.clip(np.moveaxis(out.numpy(), 0, -1), 0, 65535).round().astype(np.uint16)
 
 
+class SRPatchDataset(Dataset):
+    """Paired LR/HR patches from prepare_sen2venus.py, memory-mapped (no masks).
+
+    Files: <root>/<split>/*_lr.npy (N,H,W,4) and matching *_hr.npy (N,2H,2W,4), uint16.
+    Training crops a random LR window of `crop` pixels and applies flips/rot90.
+    Returns (lr, hr) float tensors scaled by NORMALIZATION, CHW.
+    """
+    def __init__(self, root, split="train", crop=None, augment=False):
+        if split not in ("train", "val", "test"):
+            raise ValueError("split must be train, val or test")
+        self.crop, self.augment = crop, augment
+        self.paths, self.index, self._open = [], [], {}
+        size = None
+        for lr_path in sorted((Path(root)/split).glob("*_lr.npy")):
+            hr_path = lr_path.with_name(lr_path.name[:-len("_lr.npy")] + "_hr.npy")
+            lr = np.load(lr_path, mmap_mode="r")
+            hr = np.load(hr_path, mmap_mode="r")
+            if (lr.dtype != np.uint16 or hr.dtype != np.uint16 or lr.ndim != 4 or lr.shape[-1] != 4
+                    or hr.shape != (lr.shape[0], lr.shape[1]*2, lr.shape[2]*2, 4)):
+                raise ValueError(f"{lr_path.name}: expected uint16 N,H,W,4 LR and N,2H,2W,4 HR")
+            if size not in (None, lr.shape[1:3]):
+                raise ValueError("All LR patches must have the same dimensions for batching")
+            size = lr.shape[1:3]
+            self.index += [(len(self.paths), row) for row in range(lr.shape[0])]
+            self.paths.append((lr_path, hr_path))
+            del lr, hr
+        if not self.index:
+            raise ValueError(f"No *_lr.npy patches in {root}/{split}.")
+        size = min(size)
+        if crop is not None and (type(crop) is not int or not 8 <= crop <= size):
+            raise ValueError(f"crop must be an integer between 8 and {size}")
+
+    def __len__(self):
+        return len(self.index)
+
+    def close(self):
+        """Release memory maps (Windows keeps mapped files locked)."""
+        self._open.clear()
+
+    def __getstate__(self):
+        # Memory maps are reopened in each DataLoader worker instead of being pickled (copied).
+        return {**self.__dict__, "_open": {}}
+
+    def arrays(self, index):
+        if type(index) is not int or not 0 <= index < len(self):
+            raise IndexError("Patch index out of range")
+        file, row = self.index[index]
+        if file not in self._open:
+            self._open[file] = tuple(np.load(p, mmap_mode="r") for p in self.paths[file])
+        lr, hr = self._open[file]
+        return np.array(lr[row]), np.array(hr[row])
+
+    def __getitem__(self, index):
+        lr, hr = self.arrays(index)
+        if self.crop:
+            limit = lr.shape[0] - self.crop
+            y, x = (np.random.randint(0, limit + 1, 2) if self.augment else (limit//2, limit//2))
+            lr = lr[y:y+self.crop, x:x+self.crop]
+            hr = hr[2*y:2*(y+self.crop), 2*x:2*(x+self.crop)]
+        if self.augment:
+            k = np.random.randint(4)
+            lr, hr = np.rot90(lr, k), np.rot90(hr, k)
+            if np.random.rand() < .5:
+                lr, hr = lr[:, ::-1], hr[:, ::-1]
+        to_tensor = lambda a: torch.from_numpy(np.moveaxis(a.astype(np.float32)/NORMALIZATION, -1, 0).copy())
+        return to_tensor(lr), to_tensor(hr)
+
+
 class SatelliteDataset(Dataset):
     """NPZ: hr [2H,2W,4], lr [H,W,4], mask [2H,2W]; uint16 bands, uint8 IDs."""
     def __init__(self, root=None, split="train", demo=False, samples=128, size=64):

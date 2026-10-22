@@ -67,7 +67,7 @@ def prepare(output):
         _atomic_write(output/"overview.png", lambda temp: fig.savefig(temp, format="png", dpi=140))
         save_text(output/"summary.json", json.dumps(dict(torch_version=torch.__version__, scenes=summary), indent=2, allow_nan=False))
         readme = ["# Offline showcase results", "", "These outputs use the five genuine Sentinel-2 inputs and CPU inference.",
-                  "Land cover uses real-pretrained OpenEarthMap weights and measured-NIR checks. RCAN remains synthetic-trained.",
+                  "Land cover uses real-pretrained OpenEarthMap weights and measured-NIR checks. RCAN is trained on real Sentinel-2/VENµS pairs (small measured gain over bicubic).",
                   "Road/building accuracy at Sentinel-2's 10 m resolution is unvalidated. Scores are not calibrated accuracy.", "",
                   "![Original, enhanced, predicted map and overlay](overview.png)", "",
                   "Each scene folder includes original/enhanced PNGs, maps, overlay, scores, arrays, GeoTIFFs, report and results.zip.",

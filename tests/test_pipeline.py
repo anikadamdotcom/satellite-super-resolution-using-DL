@@ -58,7 +58,11 @@ class PipelineTests(unittest.TestCase):
             engine.super_resolve(image[..., :3])
 
     def test_trained_models_on_unseen_scene(self):
-        sr = L1BSRSR(ROOT/"checkpoints/demo/rcan.pt", "cpu", tile_size=32)
+        # The synthetic generator's own degradation is only beaten by the synthetic-trained RCAN.
+        # The app's rcan.pt is trained on real SEN2VENµS pairs (scored in evaluate_sen2venus.py).
+        app_sr = L1BSRSR(ROOT/"checkpoints/demo/rcan.pt", "cpu", tile_size=32)
+        self.assertIn("SEN2VENµS", app_sr.provenance)
+        sr = L1BSRSR(ROOT/"checkpoints/demo/rcan_synthetic.pt", "cpu", tile_size=32)
         seg = LandCoverSegmenter("cpu", ROOT/"checkpoints/demo/unet.pt", tile_size=32)
         lr, hr, mask = synthetic_scene(300000, 64)
         prediction = sr.super_resolve(lr)

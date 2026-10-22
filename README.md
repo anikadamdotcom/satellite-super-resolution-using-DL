@@ -8,7 +8,7 @@ The demonstration inputs in `demo_images/` are **genuine Sentinel-2 L2A crops** 
 
 The default land-cover detector combines **Hugging Face SegFormer-B0 and OpenEarthMap SparseMask**, pretrained on real labeled imagery. It detects from the original image and applies NIR checks only to measured satellite bands. Roads, buildings, vegetation, water, bare land and developed space remain distinct. The fixed eight-image LoveDA audit improved from **77.17% to 79.80% pixel accuracy**; the requested 85% threshold is **not met**. See [Hugging Face integration and full limitations](HF_MODEL.md). No accuracy guarantee applies to arbitrary uploads.
 
-RCAN and the optional synthetic U-Net are trained on procedural scenes, with gradient-based learning, model selection and held-out evaluation. Their synthetic test metrics do not establish real-scene performance. The synthetic training and real-data preparation workflows are included.
+The app's RCAN (`checkpoints/demo/rcan.pt`) is **trained on real image pairs**: Sentinel-2 10 m patches matched with same-day VENµS 5 m images (SEN2VENµS dataset). On two held-out Indian sites it beats bicubic by a small margin (+0.47 dB PSNR after correcting for sensor misregistration, +0.09 dB raw); see [Real-data RCAN training](#real-data-rcan-training-sen2venµs). The earlier synthetic-trained RCAN is kept as `checkpoints/demo/rcan_synthetic.pt`; on the same real test it scored *below* bicubic. The optional U-Net is still trained on procedural scenes only.
 
 ![Application preview](docs/app_preview.png)
 
@@ -38,7 +38,36 @@ Processing runs in a worker thread. Large inputs use overlapping inference tiles
 
 Inference inputs are capped at 1024 pixels on their longest side. Larger rasters are resampled while preserving their footprint and updating the affine transform. Use smaller geographic crops when you need to preserve native pixel spacing.
 
-## Reproduce the learning experiment
+## Real-data RCAN training (SEN2VENµS)
+
+The app's RCAN was trained on SEN2VENµS (Michel et al., 2022, *Data* 7(7):96; Zenodo record 6514159, CC BY-NC 4.0): Sentinel-2 10 m B02/B03/B04/B08 patches (128x128) paired with VENµS 5 m patches (256x256) acquired the same day. Sites are split so no site appears in two splits:
+
+| Split | Sites | Patches |
+| --- | --- | ---: |
+| Train | ATTO, ESTUAMAR, SUDOUE-4, K34-AMAZ, MAD-AMBO, LERIDA-1, JAM2018 | 11,745 |
+| Validation | ALSACE | 2,647 |
+| Test | BENGA (West Bengal, India), KUDALIAR (Telangana, India) | 13,039 |
+
+```powershell
+python download_sen2venus.py          # ~17 GB, resumable, MD5-checked
+python prepare_sen2venus.py           # -> datasets/sen2venus_npy/{train,val,test}
+python train.py --task sr --data datasets/sen2venus_npy --output checkpoints/real/runA --epochs 80 --batch-size 16 --crop 96 --lr 2e-4
+python evaluate_sen2venus.py --models old_synthetic=checkpoints/demo/rcan_synthetic.pt new_real=checkpoints/demo/rcan.pt
+```
+
+Same architecture as before (32 features, 3 residual groups x 4 blocks, bicubic skip, under 1 M parameters), so CPU and ONNX speed are unchanged. VENµS and Sentinel-2 images are misregistered by about one 5 m pixel and differ slightly in band response, so the training loss is a **shift- and bias-compensated L1**: the best integer shift within ±2 px and each band's mean offset are removed before scoring, as in the PROBA-V challenge's cPSNR. A weak term (weight 0.1) keeps the 2x2 average of the output equal to the Sentinel-2 input. This way the model cannot learn to shift or recolour the image. Trained on an RTX 5050 Laptop GPU (bf16 mixed precision, ~60 s/epoch). The checkpoint was selected by validation loss at **epoch 6 of 80**: later epochs kept improving on training sites but not on the validation site.
+
+Held-out test (2,000 evenly spaced patches from BENGA and KUDALIAR, scored against the real VENµS 5 m image, data range 10000; `results/sen2venus_test_runA.json`):
+
+| Method | PSNR raw | PSNR compensated | Gain vs bicubic (compensated) | Patches better than bicubic | SSIM compensated | SAM compensated |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Bicubic | 39.08 dB | 40.09 dB | 0 | n/a | 0.9664 | 1.974° |
+| Old RCAN (synthetic) | 38.83 dB | 39.80 dB | −0.29 dB | 6 / 2000 | 0.9630 | 2.062° |
+| **New RCAN (SEN2VENµS)** | **39.17 dB** | **40.55 dB** | **+0.47 dB** | **1638 / 2000** | **0.9697** | **1.826°** |
+
+The gain is similar on both sites (BENGA +0.48 dB, KUDALIAR +0.46 dB). Limits: the improvement is small, as the literature expects at 2x. Most of the raw error is sensor misregistration that no method can fix. VENµS is a different sensor, so this measures "closer to a real 5 m image", not recovery of objects smaller than 10 m. ESA's SEN2SR has not yet been scored on this test. Output remains derived imagery and is labelled as such in exports.
+
+## Reproduce the synthetic learning experiment
 
 ```powershell
 python train.py --demo --epochs 30 --samples 128 --output checkpoints/demo
@@ -50,7 +79,7 @@ python -m unittest discover -s tests -v
 
 Training uses 128 scenes, with 32 separate validation scenes and 32 separate test scenes. The three splits use disjoint random seeds. Each scene has 64x64 four-band HR imagery and five-class labels; LR is generated using antialiased bicubic downsampling to 32x32. Adam trains RCAN with L1 loss and U-Net with cross-entropy. The best checkpoint for each task is selected by validation loss. The test set is evaluated once after training. Results and all epoch losses are saved in `training_report.json`.
 
-The included run used an NVIDIA GeForce RTX 3070 Ti Laptop GPU. Exact package versions are recorded in `requirements-tested.txt` and the training report. Floating-point results may differ across platforms.
+This section describes the original synthetic experiment. Its RCAN is kept as `checkpoints/demo/rcan_synthetic.pt` (ONNX: `checkpoints/demo/rcan_synthetic.onnx`); the U-Net in `checkpoints/demo/unet.pt` and `training_report.json` come from this run. The included run used an NVIDIA GeForce RTX 3070 Ti Laptop GPU. Exact package versions are recorded in `requirements-tested.txt` and the training report. Floating-point results may differ across platforms.
 
 | Held-out synthetic test metric | Bicubic | Trained RCAN |
 | --- | ---: | ---: |

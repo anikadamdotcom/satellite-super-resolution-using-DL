@@ -387,7 +387,7 @@ class MainWindow(QMainWindow, JobMixin):
         self.btn_models = QPushButton("Choose model folder...")
         self.btn_models.clicked.connect(self.choose_models)
         sl.addWidget(self.btn_models)
-        self.lbl_model = QLabel("Real-data land cover model; synthetic-trained RCAN enhancement")
+        self.lbl_model = QLabel("Real-data land cover model; RCAN enhancement trained on real Sentinel-2/VENµS pairs")
         self.lbl_model.setObjectName("hint"); self.lbl_model.setWordWrap(True)
         sl.addWidget(self.lbl_model)
         side_scroll = QScrollArea()

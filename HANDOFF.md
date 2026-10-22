@@ -2,6 +2,19 @@
 
 Written 22 October 2026 on the team's first laptop (Windows, CPU + NVIDIA T500) for the Claude Code session on the second laptop (Windows, **RTX 5050 Laptop GPU, 8 GB**). Same user: Aniruddha Kadam. Read this before doing anything.
 
+## 0. UPDATE 22 Oct 2026 (laptop 2, RTX 5050): retraining done, new model is in the app
+
+Read this section first; sections 1-6 below are the original plan, kept for context.
+
+- **Done.** RCAN retrained on real SEN2VENµS pairs (Run A, same small architecture). On the Indian test sites BENGA and KUDALIAR (2,000 patches) it beats bicubic: **+0.47 dB PSNR (shift/bias compensated), +0.09 dB raw, better than bicubic on 1638/2000 patches**. The old synthetic RCAN scores −0.29 dB on the same test. Full table: README "Real-data RCAN training" and `results/sen2venus_test_runA.json`.
+- **App now uses the new model:** `checkpoints/demo/rcan.pt` (report: `checkpoints/demo/rcan_training_report.json`). The old one is kept as `checkpoints/demo/rcan_synthetic.pt` and `checkpoints/demo/rcan_synthetic.onnx`. `rcan_model.onnx` has been re-exported. The GUI sidebar label, README, PROJECT_REPORT, REAL_ACCURACY, HF_MODEL and the showcase texts have been updated. `checkpoints/demo/training_report.json` is unchanged because it also holds the synthetic U-Net history.
+- **New code:** `download_sen2venus.py` (multi-connection, resumable, MD5; Zenodo throttles each connection to ~0.5 MB/s), `prepare_sen2venus.py` (to memory-mapped `datasets/sen2venus_npy/`), `train.py --task sr` (RCAN only, bf16 AMP, crops/flips, OneCycle cosine, `--resume`), `data.SRPatchDataset`, `evaluate_sen2venus.py`, `tests/test_sen2venus.py`. All 101+ tests passed on laptop 2.
+- **Data facts verified:** each site has `<SITE>_<TILE>_<DATE>_10m_b2b3b4b8.pt` int16 (N,4,128,128) and matching `_05m_b2b3b4b8.pt` (N,4,256,256), ×10000, band order B2,B3,B4,B8, plus `index.csv` and patch GeoPackages. VENµS and S2 are misregistered by ~1 px at 5 m, so the loss and the "compensated" metrics remove the best ±2 px shift and the per-band mean offset (applied to every method equally).
+- **Caveats:** the gain is small. Validation was best at epoch 6 of 80, and later epochs overfit to the 7 training sites. SEN2SR has not been scored on the SEN2VENµS test (needs `requirements-research.txt` env + `python evaluate_sen2venus.py --sen2sr ...`). The reduced-scale Indian benchmark (§5.4.2) and the Compare-view striping check (§5.4.3) have not been redone.
+- **Possible next steps:** a better run with more training sites (≈6-8 more), ~20 epochs at lr 1e-4, maybe n_feats=48 (check CPU speed); SEN2SR comparison; §5.4.2/§5.4.3.
+- `git pull` failed on laptop 2 ("repository not found", probably GitHub auth), so laptop 1's mapping-experiment results were not merged here.
+- Datasets (`datasets/sen2venus*`, ~34 GB) and `checkpoints/real/` stay on laptop 2 (gitignored).
+
 ## 1. The project in one paragraph
 
 Semester-7 deep-learning project (team: Shantanu Vasagadekar, Aniruddha Kadam, Shrihari Kshirsagar). A PyQt desktop app (`L1BSR-GUI.py`) takes Sentinel-2 imagery (B02, B03, B04, B08; uint16, reflectance × 10000), upsamples it 2x with an RCAN model (10 m → 5 m grid), maps land cover with pretrained SegFormer + SparseMask, and exports PNG/GeoTIFF/ZIP. See `README.md`. Background research is in `RESEARCH.md` and `RESEARCH_LANDSCAPE.md`. The research's top recommendation is to **retrain RCAN on real image pairs (SEN2VENµS)**. That is your job.
