@@ -53,6 +53,10 @@ desktop.ini
 *.swo
 *~
 
+# Microsoft Office temporary and lock files
+~$*
+~WRL*.tmp
+
 # Unreferenced loose root screenshots
 Copernicus.png
 screen1 (Medium).png
