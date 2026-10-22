@@ -1,0 +1,1668 @@
+{
+  "description": "The same U-Net is trained from scratch, with the same seeds, steps and labels, on\nfour versions of the same real Sentinel-2 scenes, all on a 5 m grid:",
+  "classes": [
+    "Built-up",
+    "Tree cover",
+    "Shrub / grass",
+    "Cropland",
+    "Water / wetland",
+    "Bare / sparse"
+  ],
+  "sites": {
+    "train": [
+      "mumbai",
+      "bengaluru",
+      "kolkata",
+      "chennai",
+      "ahmedabad",
+      "jaipur",
+      "pune",
+      "bhopal",
+      "ludhiana_fields",
+      "meerut_rural",
+      "indore_rural",
+      "thanjavur",
+      "nashik",
+      "koyna",
+      "kanha",
+      "nilgiris",
+      "vembanad",
+      "sundarbans",
+      "sambhar",
+      "rann_of_kutch",
+      "leh",
+      "guwahati",
+      "dehradun",
+      "varanasi"
+    ],
+    "val": [
+      "nagpur",
+      "karnal",
+      "similipal",
+      "chilika",
+      "coimbatore"
+    ],
+    "test": [
+      "hyderabad",
+      "lucknow",
+      "guntur",
+      "bathinda",
+      "wayanad",
+      "hirakud",
+      "jaisalmer",
+      "bhubaneswar"
+    ]
+  },
+  "train_class_frequency": {
+    "Built-up": 0.3748,
+    "Tree cover": 0.1878,
+    "Shrub / grass": 0.073,
+    "Cropland": 0.1533,
+    "Water / wetland": 0.1634,
+    "Bare / sparse": 0.0477
+  },
+  "settings": {
+    "steps": 1200,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inputs": [
+      "native",
+      "bicubic",
+      "rcan",
+      "sen2sr"
+    ],
+    "batch": 8,
+    "patch": 128,
+    "lr": 0.002,
+    "eval_every": 200,
+    "device": "cpu",
+    "threads": 8
+  },
+  "sr_methods": null,
+  "runs": [
+    {
+      "method": "native",
+      "seed": 0,
+      "best_val_mean_iou": 0.5108,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.2179,
+          "val_mean_iou": 0.3528
+        },
+        {
+          "step": 400,
+          "loss": 1.7875,
+          "val_mean_iou": 0.3786
+        },
+        {
+          "step": 600,
+          "loss": 0.7903,
+          "val_mean_iou": 0.3653
+        },
+        {
+          "step": 800,
+          "loss": 0.5797,
+          "val_mean_iou": 0.4809
+        },
+        {
+          "step": 1000,
+          "loss": 1.2515,
+          "val_mean_iou": 0.494
+        },
+        {
+          "step": 1200,
+          "loss": 0.6992,
+          "val_mean_iou": 0.5108
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.6989614963531494,
+        "mean_iou": 0.48033872598794364,
+        "mean_f1": 0.6030482949809536,
+        "per_class_f1": {
+          "Built-up": 0.8617,
+          "Tree cover": 0.6422,
+          "Shrub / grass": 0.2297,
+          "Cropland": 0.2941,
+          "Water / wetland": 0.9085,
+          "Bare / sparse": 0.6821
+        },
+        "per_class_iou": {
+          "Built-up": 0.757,
+          "Tree cover": 0.4729,
+          "Shrub / grass": 0.1297,
+          "Cropland": 0.1724,
+          "Water / wetland": 0.8324,
+          "Bare / sparse": 0.5176
+        }
+      },
+      "test_confusion": [
+        [
+          3104211,
+          362970,
+          94932,
+          80220,
+          4009,
+          173010
+        ],
+        [
+          131831,
+          1379876,
+          74970,
+          611038,
+          24868,
+          6881
+        ],
+        [
+          53711,
+          214951,
+          124093,
+          131264,
+          22779,
+          89230
+        ],
+        [
+          15575,
+          98241,
+          139782,
+          241135,
+          6688,
+          66035
+        ],
+        [
+          35224,
+          8658,
+          762,
+          1924,
+          573086,
+          1630
+        ],
+        [
+          45074,
+          3450,
+          10111,
+          6591,
+          8885,
+          440913
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9052,
+        "lucknow": 0.8169,
+        "guntur": 0.7649,
+        "bathinda": 0.7737,
+        "wayanad": 0.5039,
+        "hirakud": 0.6388,
+        "jaisalmer": 0.5232,
+        "bhubaneswar": 0.665
+      },
+      "seconds": 1364.4,
+      "steps": 1200
+    },
+    {
+      "method": "bicubic",
+      "seed": 0,
+      "best_val_mean_iou": 0.5266,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.1768,
+          "val_mean_iou": 0.3558
+        },
+        {
+          "step": 400,
+          "loss": 1.6801,
+          "val_mean_iou": 0.4067
+        },
+        {
+          "step": 600,
+          "loss": 0.7094,
+          "val_mean_iou": 0.4596
+        },
+        {
+          "step": 800,
+          "loss": 0.5644,
+          "val_mean_iou": 0.4948
+        },
+        {
+          "step": 1000,
+          "loss": 1.2374,
+          "val_mean_iou": 0.5052
+        },
+        {
+          "step": 1200,
+          "loss": 0.6869,
+          "val_mean_iou": 0.5266
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7415423393249512,
+        "mean_iou": 0.5076599913181985,
+        "mean_f1": 0.6270685869736626,
+        "per_class_f1": {
+          "Built-up": 0.865,
+          "Tree cover": 0.7393,
+          "Shrub / grass": 0.1835,
+          "Cropland": 0.3886,
+          "Water / wetland": 0.9268,
+          "Bare / sparse": 0.6592
+        },
+        "per_class_iou": {
+          "Built-up": 0.7622,
+          "Tree cover": 0.5864,
+          "Shrub / grass": 0.101,
+          "Cropland": 0.2412,
+          "Water / wetland": 0.8636,
+          "Bare / sparse": 0.4916
+        }
+      },
+      "test_confusion": [
+        [
+          3116786,
+          367671,
+          71859,
+          70676,
+          3484,
+          188876
+        ],
+        [
+          133738,
+          1738637,
+          64120,
+          275802,
+          9831,
+          7336
+        ],
+        [
+          59870,
+          252228,
+          89125,
+          107846,
+          20585,
+          106374
+        ],
+        [
+          19267,
+          103724,
+          103972,
+          252428,
+          6575,
+          81490
+        ],
+        [
+          21208,
+          9614,
+          469,
+          7266,
+          580364,
+          2363
+        ],
+        [
+          35863,
+          2363,
+          5684,
+          17677,
+          10269,
+          443168
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9113,
+        "lucknow": 0.8113,
+        "guntur": 0.7637,
+        "bathinda": 0.8203,
+        "wayanad": 0.7438,
+        "hirakud": 0.64,
+        "jaisalmer": 0.4945,
+        "bhubaneswar": 0.7475
+      },
+      "seconds": 1106.3,
+      "steps": 1200
+    },
+    {
+      "method": "rcan",
+      "seed": 0,
+      "best_val_mean_iou": 0.5345,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.133,
+          "val_mean_iou": 0.4229
+        },
+        {
+          "step": 400,
+          "loss": 1.7983,
+          "val_mean_iou": 0.3038
+        },
+        {
+          "step": 600,
+          "loss": 0.6316,
+          "val_mean_iou": 0.4538
+        },
+        {
+          "step": 800,
+          "loss": 0.5329,
+          "val_mean_iou": 0.5123
+        },
+        {
+          "step": 1000,
+          "loss": 1.2012,
+          "val_mean_iou": 0.5196
+        },
+        {
+          "step": 1200,
+          "loss": 0.6814,
+          "val_mean_iou": 0.5345
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7375634908676147,
+        "mean_iou": 0.5056427533681292,
+        "mean_f1": 0.6273051901585913,
+        "per_class_f1": {
+          "Built-up": 0.8704,
+          "Tree cover": 0.7208,
+          "Shrub / grass": 0.2103,
+          "Cropland": 0.3716,
+          "Water / wetland": 0.916,
+          "Bare / sparse": 0.6747
+        },
+        "per_class_iou": {
+          "Built-up": 0.7706,
+          "Tree cover": 0.5635,
+          "Shrub / grass": 0.1175,
+          "Cropland": 0.2282,
+          "Water / wetland": 0.845,
+          "Bare / sparse": 0.5091
+        }
+      },
+      "test_confusion": [
+        [
+          3146581,
+          372220,
+          67156,
+          61748,
+          3930,
+          167717
+        ],
+        [
+          140386,
+          1660258,
+          68370,
+          330124,
+          22192,
+          8134
+        ],
+        [
+          47701,
+          232058,
+          105528,
+          129882,
+          22009,
+          98850
+        ],
+        [
+          15181,
+          101033,
+          116224,
+          252935,
+          7060,
+          75023
+        ],
+        [
+          23812,
+          9297,
+          799,
+          4720,
+          580462,
+          2194
+        ],
+        [
+          36973,
+          2241,
+          9586,
+          14356,
+          10501,
+          441367
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9103,
+        "lucknow": 0.8151,
+        "guntur": 0.7595,
+        "bathinda": 0.8061,
+        "wayanad": 0.7212,
+        "hirakud": 0.6449,
+        "jaisalmer": 0.531,
+        "bhubaneswar": 0.7122
+      },
+      "seconds": 1393.4,
+      "steps": 1200
+    },
+    {
+      "method": "sen2sr",
+      "seed": 0,
+      "best_val_mean_iou": 0.5402,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.509,
+          "val_mean_iou": 0.1688
+        },
+        {
+          "step": 400,
+          "loss": 1.7097,
+          "val_mean_iou": 0.4381
+        },
+        {
+          "step": 600,
+          "loss": 0.4957,
+          "val_mean_iou": 0.3671
+        },
+        {
+          "step": 800,
+          "loss": 0.5618,
+          "val_mean_iou": 0.4713
+        },
+        {
+          "step": 1000,
+          "loss": 1.177,
+          "val_mean_iou": 0.5189
+        },
+        {
+          "step": 1200,
+          "loss": 0.6789,
+          "val_mean_iou": 0.5402
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7327016592025757,
+        "mean_iou": 0.5041192903595153,
+        "mean_f1": 0.6259015556464093,
+        "per_class_f1": {
+          "Built-up": 0.8771,
+          "Tree cover": 0.7056,
+          "Shrub / grass": 0.2237,
+          "Cropland": 0.3485,
+          "Water / wetland": 0.9087,
+          "Bare / sparse": 0.6919
+        },
+        "per_class_iou": {
+          "Built-up": 0.7812,
+          "Tree cover": 0.5451,
+          "Shrub / grass": 0.1259,
+          "Cropland": 0.211,
+          "Water / wetland": 0.8326,
+          "Bare / sparse": 0.5289
+        }
+      },
+      "test_confusion": [
+        [
+          3175112,
+          331040,
+          90858,
+          60949,
+          4219,
+          157174
+        ],
+        [
+          136157,
+          1579404,
+          85321,
+          389762,
+          32133,
+          6687
+        ],
+        [
+          43643,
+          227329,
+          120668,
+          132764,
+          22678,
+          88946
+        ],
+        [
+          14777,
+          95489,
+          136604,
+          248486,
+          7233,
+          64867
+        ],
+        [
+          19177,
+          11004,
+          753,
+          6963,
+          581033,
+          2354
+        ],
+        [
+          31534,
+          3063,
+          8753,
+          19765,
+          10265,
+          441644
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9066,
+        "lucknow": 0.8187,
+        "guntur": 0.7831,
+        "bathinda": 0.7815,
+        "wayanad": 0.641,
+        "hirakud": 0.6423,
+        "jaisalmer": 0.537,
+        "bhubaneswar": 0.7513
+      },
+      "seconds": 1231.0,
+      "steps": 1200
+    },
+    {
+      "method": "native",
+      "seed": 1,
+      "best_val_mean_iou": 0.5161,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.1638,
+          "val_mean_iou": 0.2218
+        },
+        {
+          "step": 400,
+          "loss": 1.1744,
+          "val_mean_iou": 0.2189
+        },
+        {
+          "step": 600,
+          "loss": 0.9751,
+          "val_mean_iou": 0.499
+        },
+        {
+          "step": 800,
+          "loss": 0.9364,
+          "val_mean_iou": 0.4599
+        },
+        {
+          "step": 1000,
+          "loss": 0.826,
+          "val_mean_iou": 0.4764
+        },
+        {
+          "step": 1200,
+          "loss": 0.7898,
+          "val_mean_iou": 0.5161
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.6813168525695801,
+        "mean_iou": 0.45041825691195303,
+        "mean_f1": 0.5680234344148006,
+        "per_class_f1": {
+          "Built-up": 0.8659,
+          "Tree cover": 0.596,
+          "Shrub / grass": 0.1431,
+          "Cropland": 0.2948,
+          "Water / wetland": 0.9142,
+          "Bare / sparse": 0.5943
+        },
+        "per_class_iou": {
+          "Built-up": 0.7635,
+          "Tree cover": 0.4245,
+          "Shrub / grass": 0.0771,
+          "Cropland": 0.1729,
+          "Water / wetland": 0.8419,
+          "Bare / sparse": 0.4227
+        }
+      },
+      "test_confusion": [
+        [
+          3184542,
+          258814,
+          41401,
+          73345,
+          1727,
+          259523
+        ],
+        [
+          160667,
+          1190993,
+          57546,
+          786724,
+          15135,
+          18399
+        ],
+        [
+          68127,
+          224179,
+          61273,
+          129417,
+          15497,
+          137535
+        ],
+        [
+          23394,
+          82743,
+          56534,
+          269934,
+          4004,
+          130847
+        ],
+        [
+          49590,
+          8537,
+          231,
+          808,
+          558258,
+          3860
+        ],
+        [
+          49996,
+          2153,
+          3323,
+          3809,
+          5443,
+          450300
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9157,
+        "lucknow": 0.8141,
+        "guntur": 0.7647,
+        "bathinda": 0.8016,
+        "wayanad": 0.3882,
+        "hirakud": 0.6319,
+        "jaisalmer": 0.4582,
+        "bhubaneswar": 0.6762
+      },
+      "seconds": 1153.5,
+      "steps": 1200
+    },
+    {
+      "method": "bicubic",
+      "seed": 1,
+      "best_val_mean_iou": 0.5321,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.144,
+          "val_mean_iou": 0.1592
+        },
+        {
+          "step": 400,
+          "loss": 1.0051,
+          "val_mean_iou": 0.0936
+        },
+        {
+          "step": 600,
+          "loss": 1.0739,
+          "val_mean_iou": 0.4849
+        },
+        {
+          "step": 800,
+          "loss": 0.9696,
+          "val_mean_iou": 0.499
+        },
+        {
+          "step": 1000,
+          "loss": 0.8222,
+          "val_mean_iou": 0.5118
+        },
+        {
+          "step": 1200,
+          "loss": 0.784,
+          "val_mean_iou": 0.5321
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7086900472640991,
+        "mean_iou": 0.47132183462847205,
+        "mean_f1": 0.5866057573318461,
+        "per_class_f1": {
+          "Built-up": 0.8837,
+          "Tree cover": 0.6305,
+          "Shrub / grass": 0.1542,
+          "Cropland": 0.2893,
+          "Water / wetland": 0.9179,
+          "Bare / sparse": 0.6441
+        },
+        "per_class_iou": {
+          "Built-up": 0.7916,
+          "Tree cover": 0.4604,
+          "Shrub / grass": 0.0835,
+          "Cropland": 0.1691,
+          "Water / wetland": 0.8483,
+          "Bare / sparse": 0.475
+        }
+      },
+      "test_confusion": [
+        [
+          3350997,
+          208588,
+          47527,
+          37547,
+          2786,
+          171907
+        ],
+        [
+          214777,
+          1273146,
+          55266,
+          656878,
+          16943,
+          12454
+        ],
+        [
+          81746,
+          226871,
+          69997,
+          112973,
+          18001,
+          126440
+        ],
+        [
+          31230,
+          90271,
+          95526,
+          233890,
+          5871,
+          110668
+        ],
+        [
+          36372,
+          9002,
+          230,
+          1766,
+          570303,
+          3611
+        ],
+        [
+          49613,
+          1333,
+          3524,
+          6552,
+          7412,
+          446590
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9119,
+        "lucknow": 0.8214,
+        "guntur": 0.8087,
+        "bathinda": 0.8182,
+        "wayanad": 0.4656,
+        "hirakud": 0.6384,
+        "jaisalmer": 0.5205,
+        "bhubaneswar": 0.685
+      },
+      "seconds": 1234.4,
+      "steps": 1200
+    },
+    {
+      "method": "rcan",
+      "seed": 1,
+      "best_val_mean_iou": 0.5228,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.0519,
+          "val_mean_iou": 0.1883
+        },
+        {
+          "step": 400,
+          "loss": 0.9891,
+          "val_mean_iou": 0.3397
+        },
+        {
+          "step": 600,
+          "loss": 1.1733,
+          "val_mean_iou": 0.5093
+        },
+        {
+          "step": 800,
+          "loss": 0.949,
+          "val_mean_iou": 0.4675
+        },
+        {
+          "step": 1000,
+          "loss": 0.8271,
+          "val_mean_iou": 0.4902
+        },
+        {
+          "step": 1200,
+          "loss": 0.7898,
+          "val_mean_iou": 0.5228
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.6944663524627686,
+        "mean_iou": 0.4633539218711635,
+        "mean_f1": 0.580932449450956,
+        "per_class_f1": {
+          "Built-up": 0.8703,
+          "Tree cover": 0.6128,
+          "Shrub / grass": 0.1569,
+          "Cropland": 0.2985,
+          "Water / wetland": 0.9182,
+          "Bare / sparse": 0.629
+        },
+        "per_class_iou": {
+          "Built-up": 0.7704,
+          "Tree cover": 0.4417,
+          "Shrub / grass": 0.0851,
+          "Cropland": 0.1755,
+          "Water / wetland": 0.8487,
+          "Bare / sparse": 0.4587
+        }
+      },
+      "test_confusion": [
+        [
+          3235318,
+          291892,
+          41361,
+          44337,
+          1515,
+          204929
+        ],
+        [
+          175841,
+          1255536,
+          68696,
+          701466,
+          13584,
+          14341
+        ],
+        [
+          79593,
+          225073,
+          71082,
+          115130,
+          16895,
+          128255
+        ],
+        [
+          26525,
+          86939,
+          85644,
+          251338,
+          4896,
+          112114
+        ],
+        [
+          45425,
+          7986,
+          235,
+          989,
+          563990,
+          2659
+        ],
+        [
+          53015,
+          1052,
+          3261,
+          3018,
+          6336,
+          448342
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9203,
+        "lucknow": 0.8147,
+        "guntur": 0.7604,
+        "bathinda": 0.8217,
+        "wayanad": 0.4238,
+        "hirakud": 0.6357,
+        "jaisalmer": 0.5045,
+        "bhubaneswar": 0.6748
+      },
+      "seconds": 1756.5,
+      "steps": 1200
+    },
+    {
+      "method": "sen2sr",
+      "seed": 1,
+      "best_val_mean_iou": 0.5223,
+      "history": [
+        {
+          "step": 200,
+          "loss": 1.1189,
+          "val_mean_iou": 0.3026
+        },
+        {
+          "step": 400,
+          "loss": 0.9954,
+          "val_mean_iou": 0.2808
+        },
+        {
+          "step": 600,
+          "loss": 1.027,
+          "val_mean_iou": 0.4563
+        },
+        {
+          "step": 800,
+          "loss": 0.9097,
+          "val_mean_iou": 0.4756
+        },
+        {
+          "step": 1000,
+          "loss": 0.7982,
+          "val_mean_iou": 0.4942
+        },
+        {
+          "step": 1200,
+          "loss": 0.8029,
+          "val_mean_iou": 0.5223
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.6985505819320679,
+        "mean_iou": 0.4635984378584384,
+        "mean_f1": 0.5802165246779186,
+        "per_class_f1": {
+          "Built-up": 0.8775,
+          "Tree cover": 0.6184,
+          "Shrub / grass": 0.1487,
+          "Cropland": 0.3003,
+          "Water / wetland": 0.9168,
+          "Bare / sparse": 0.6195
+        },
+        "per_class_iou": {
+          "Built-up": 0.7818,
+          "Tree cover": 0.4476,
+          "Shrub / grass": 0.0803,
+          "Cropland": 0.1767,
+          "Water / wetland": 0.8464,
+          "Bare / sparse": 0.4488
+        }
+      },
+      "test_confusion": [
+        [
+          3256334,
+          275517,
+          44219,
+          34321,
+          2718,
+          206243
+        ],
+        [
+          168173,
+          1271449,
+          62738,
+          693751,
+          15895,
+          17458
+        ],
+        [
+          66380,
+          234055,
+          66149,
+          117521,
+          17144,
+          134779
+        ],
+        [
+          24047,
+          88299,
+          76572,
+          250769,
+          5151,
+          122618
+        ],
+        [
+          39475,
+          10483,
+          264,
+          1082,
+          566654,
+          3326
+        ],
+        [
+          47676,
+          2730,
+          3705,
+          5100,
+          7301,
+          448512
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9177,
+        "lucknow": 0.8171,
+        "guntur": 0.7919,
+        "bathinda": 0.8145,
+        "wayanad": 0.4499,
+        "hirakud": 0.6355,
+        "jaisalmer": 0.4949,
+        "bhubaneswar": 0.6669
+      },
+      "seconds": 1708.1,
+      "steps": 1200
+    },
+    {
+      "method": "native",
+      "seed": 2,
+      "best_val_mean_iou": 0.5196,
+      "history": [
+        {
+          "step": 200,
+          "loss": 0.8753,
+          "val_mean_iou": 0.2727
+        },
+        {
+          "step": 400,
+          "loss": 0.925,
+          "val_mean_iou": 0.2837
+        },
+        {
+          "step": 600,
+          "loss": 1.0732,
+          "val_mean_iou": 0.4573
+        },
+        {
+          "step": 800,
+          "loss": 0.8073,
+          "val_mean_iou": 0.4209
+        },
+        {
+          "step": 1000,
+          "loss": 0.8794,
+          "val_mean_iou": 0.5196
+        },
+        {
+          "step": 1200,
+          "loss": 1.3033,
+          "val_mean_iou": 0.4997
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7500187158584595,
+        "mean_iou": 0.5037493701220656,
+        "mean_f1": 0.6210314232918402,
+        "per_class_f1": {
+          "Built-up": 0.8797,
+          "Tree cover": 0.7449,
+          "Shrub / grass": 0.183,
+          "Cropland": 0.3498,
+          "Water / wetland": 0.9185,
+          "Bare / sparse": 0.6504
+        },
+        "per_class_iou": {
+          "Built-up": 0.7852,
+          "Tree cover": 0.5935,
+          "Shrub / grass": 0.1007,
+          "Cropland": 0.212,
+          "Water / wetland": 0.8492,
+          "Bare / sparse": 0.4819
+        }
+      },
+      "test_confusion": [
+        [
+          3283655,
+          271586,
+          56755,
+          30353,
+          4450,
+          172553
+        ],
+        [
+          169529,
+          1700234,
+          71460,
+          265587,
+          13592,
+          9062
+        ],
+        [
+          79492,
+          251315,
+          90697,
+          83832,
+          23055,
+          107637
+        ],
+        [
+          28772,
+          104390,
+          128803,
+          201872,
+          7809,
+          95810
+        ],
+        [
+          30421,
+          6566,
+          656,
+          845,
+          580138,
+          2658
+        ],
+        [
+          54447,
+          1342,
+          6989,
+          4295,
+          12934,
+          435017
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9127,
+        "lucknow": 0.8221,
+        "guntur": 0.7875,
+        "bathinda": 0.8406,
+        "wayanad": 0.7095,
+        "hirakud": 0.6344,
+        "jaisalmer": 0.5171,
+        "bhubaneswar": 0.7763
+      },
+      "seconds": 907.3,
+      "steps": 1200
+    },
+    {
+      "method": "bicubic",
+      "seed": 2,
+      "best_val_mean_iou": 0.5118,
+      "history": [
+        {
+          "step": 200,
+          "loss": 0.9624,
+          "val_mean_iou": 0.3831
+        },
+        {
+          "step": 400,
+          "loss": 0.8907,
+          "val_mean_iou": 0.3774
+        },
+        {
+          "step": 600,
+          "loss": 0.9836,
+          "val_mean_iou": 0.445
+        },
+        {
+          "step": 800,
+          "loss": 0.7802,
+          "val_mean_iou": 0.3759
+        },
+        {
+          "step": 1000,
+          "loss": 0.8666,
+          "val_mean_iou": 0.5118
+        },
+        {
+          "step": 1200,
+          "loss": 1.3581,
+          "val_mean_iou": 0.504
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7546782493591309,
+        "mean_iou": 0.5000367162258598,
+        "mean_f1": 0.6197442533714478,
+        "per_class_f1": {
+          "Built-up": 0.8743,
+          "Tree cover": 0.7644,
+          "Shrub / grass": 0.1835,
+          "Cropland": 0.3711,
+          "Water / wetland": 0.9052,
+          "Bare / sparse": 0.6199
+        },
+        "per_class_iou": {
+          "Built-up": 0.7767,
+          "Tree cover": 0.6186,
+          "Shrub / grass": 0.101,
+          "Cropland": 0.2278,
+          "Water / wetland": 0.8269,
+          "Bare / sparse": 0.4492
+        }
+      },
+      "test_confusion": [
+        [
+          3225375,
+          316255,
+          49472,
+          25427,
+          8239,
+          194584
+        ],
+        [
+          158684,
+          1826000,
+          60994,
+          164274,
+          9740,
+          9772
+        ],
+        [
+          76969,
+          274490,
+          88912,
+          66556,
+          25296,
+          103805
+        ],
+        [
+          29119,
+          123317,
+          125538,
+          189267,
+          7576,
+          92639
+        ],
+        [
+          19803,
+          6754,
+          688,
+          1758,
+          587730,
+          4551
+        ],
+        [
+          48886,
+          1536,
+          7309,
+          5244,
+          38633,
+          413416
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.913,
+        "lucknow": 0.8172,
+        "guntur": 0.7803,
+        "bathinda": 0.8428,
+        "wayanad": 0.7925,
+        "hirakud": 0.6413,
+        "jaisalmer": 0.4836,
+        "bhubaneswar": 0.7668
+      },
+      "seconds": 923.5,
+      "steps": 1200
+    },
+    {
+      "method": "rcan",
+      "seed": 2,
+      "best_val_mean_iou": 0.498,
+      "history": [
+        {
+          "step": 200,
+          "loss": 0.8404,
+          "val_mean_iou": 0.2511
+        },
+        {
+          "step": 400,
+          "loss": 0.8817,
+          "val_mean_iou": 0.3647
+        },
+        {
+          "step": 600,
+          "loss": 1.0176,
+          "val_mean_iou": 0.4218
+        },
+        {
+          "step": 800,
+          "loss": 0.8105,
+          "val_mean_iou": 0.4425
+        },
+        {
+          "step": 1000,
+          "loss": 0.8766,
+          "val_mean_iou": 0.498
+        },
+        {
+          "step": 1200,
+          "loss": 1.4677,
+          "val_mean_iou": 0.4944
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7631665468215942,
+        "mean_iou": 0.5099737433333668,
+        "mean_f1": 0.6266120643151706,
+        "per_class_f1": {
+          "Built-up": 0.8777,
+          "Tree cover": 0.7694,
+          "Shrub / grass": 0.1519,
+          "Cropland": 0.4078,
+          "Water / wetland": 0.9192,
+          "Bare / sparse": 0.6337
+        },
+        "per_class_iou": {
+          "Built-up": 0.7821,
+          "Tree cover": 0.6253,
+          "Shrub / grass": 0.0822,
+          "Cropland": 0.2562,
+          "Water / wetland": 0.8504,
+          "Bare / sparse": 0.4638
+        }
+      },
+      "test_confusion": [
+        [
+          3244356,
+          330110,
+          35577,
+          24839,
+          6998,
+          177472
+        ],
+        [
+          149571,
+          1871108,
+          51988,
+          133370,
+          9847,
+          13580
+        ],
+        [
+          72791,
+          292851,
+          67767,
+          56129,
+          22296,
+          124194
+        ],
+        [
+          25718,
+          129942,
+          95754,
+          201412,
+          7884,
+          106746
+        ],
+        [
+          27880,
+          7842,
+          345,
+          948,
+          581367,
+          2902
+        ],
+        [
+          53049,
+          2242,
+          4948,
+          3557,
+          15333,
+          435895
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9077,
+        "lucknow": 0.8131,
+        "guntur": 0.7923,
+        "bathinda": 0.8415,
+        "wayanad": 0.8296,
+        "hirakud": 0.6355,
+        "jaisalmer": 0.5192,
+        "bhubaneswar": 0.7664
+      },
+      "seconds": 968.2,
+      "steps": 1200
+    },
+    {
+      "method": "sen2sr",
+      "seed": 2,
+      "best_val_mean_iou": 0.5097,
+      "history": [
+        {
+          "step": 200,
+          "loss": 0.8153,
+          "val_mean_iou": 0.3562
+        },
+        {
+          "step": 400,
+          "loss": 0.8318,
+          "val_mean_iou": 0.3221
+        },
+        {
+          "step": 600,
+          "loss": 0.9248,
+          "val_mean_iou": 0.4062
+        },
+        {
+          "step": 800,
+          "loss": 0.7866,
+          "val_mean_iou": 0.4057
+        },
+        {
+          "step": 1000,
+          "loss": 0.8718,
+          "val_mean_iou": 0.5097
+        },
+        {
+          "step": 1200,
+          "loss": 1.2838,
+          "val_mean_iou": 0.5014
+        }
+      ],
+      "test": {
+        "overall_accuracy": 0.7474210262298584,
+        "mean_iou": 0.49593191490231336,
+        "mean_f1": 0.6146300336242326,
+        "per_class_f1": {
+          "Built-up": 0.8705,
+          "Tree cover": 0.7564,
+          "Shrub / grass": 0.1598,
+          "Cropland": 0.3747,
+          "Water / wetland": 0.9083,
+          "Bare / sparse": 0.6182
+        },
+        "per_class_iou": {
+          "Built-up": 0.7706,
+          "Tree cover": 0.6082,
+          "Shrub / grass": 0.0868,
+          "Cropland": 0.2305,
+          "Water / wetland": 0.832,
+          "Bare / sparse": 0.4474
+        }
+      },
+      "test_confusion": [
+        [
+          3177582,
+          336159,
+          47354,
+          29557,
+          8696,
+          220004
+        ],
+        [
+          141117,
+          1794686,
+          69074,
+          195267,
+          17419,
+          11901
+        ],
+        [
+          63952,
+          263067,
+          75995,
+          85453,
+          24968,
+          122593
+        ],
+        [
+          22495,
+          110961,
+          117426,
+          203458,
+          8243,
+          104873
+        ],
+        [
+          27782,
+          8429,
+          592,
+          799,
+          580975,
+          2707
+        ],
+        [
+          48724,
+          2602,
+          4803,
+          4132,
+          17637,
+          437126
+        ]
+      ],
+      "per_site": {
+        "hyderabad": 0.9062,
+        "lucknow": 0.8158,
+        "guntur": 0.7864,
+        "bathinda": 0.8409,
+        "wayanad": 0.771,
+        "hirakud": 0.6287,
+        "jaisalmer": 0.4642,
+        "bhubaneswar": 0.7663
+      },
+      "seconds": 985.1,
+      "steps": 1200
+    }
+  ],
+  "summary": {
+    "native": {
+      "overall_accuracy": {
+        "mean": 0.7101,
+        "std": 0.0291
+      },
+      "mean_iou": {
+        "mean": 0.4782,
+        "std": 0.0218
+      },
+      "mean_f1": {
+        "mean": 0.5974,
+        "std": 0.022
+      },
+      "per_class_f1": {
+        "Built-up": 0.8691,
+        "Tree cover": 0.661,
+        "Shrub / grass": 0.1853,
+        "Cropland": 0.3129,
+        "Water / wetland": 0.9137,
+        "Bare / sparse": 0.6423
+      },
+      "difference_vs_bicubic": {
+        "overall_accuracy": {
+          "mean": -0.0249,
+          "min": -0.0426,
+          "max": -0.0047
+        },
+        "mean_iou": {
+          "mean": -0.0148,
+          "min": -0.0273,
+          "max": 0.0037
+        },
+        "mean_f1": {
+          "mean": -0.0138,
+          "min": -0.024,
+          "max": 0.0013
+        }
+      }
+    },
+    "bicubic": {
+      "overall_accuracy": {
+        "mean": 0.735,
+        "std": 0.0193
+      },
+      "mean_iou": {
+        "mean": 0.493,
+        "std": 0.0156
+      },
+      "mean_f1": {
+        "mean": 0.6111,
+        "std": 0.0176
+      },
+      "per_class_f1": {
+        "Built-up": 0.8743,
+        "Tree cover": 0.7114,
+        "Shrub / grass": 0.1737,
+        "Cropland": 0.3497,
+        "Water / wetland": 0.9166,
+        "Bare / sparse": 0.6411
+      }
+    },
+    "rcan": {
+      "overall_accuracy": {
+        "mean": 0.7317,
+        "std": 0.0283
+      },
+      "mean_iou": {
+        "mean": 0.493,
+        "std": 0.021
+      },
+      "mean_f1": {
+        "mean": 0.6116,
+        "std": 0.0217
+      },
+      "per_class_f1": {
+        "Built-up": 0.8728,
+        "Tree cover": 0.701,
+        "Shrub / grass": 0.173,
+        "Cropland": 0.3593,
+        "Water / wetland": 0.9178,
+        "Bare / sparse": 0.6458
+      },
+      "difference_vs_bicubic": {
+        "overall_accuracy": {
+          "mean": -0.0032,
+          "min": -0.0142,
+          "max": 0.0085
+        },
+        "mean_iou": {
+          "mean": -0.0,
+          "min": -0.008,
+          "max": 0.0099
+        },
+        "mean_f1": {
+          "mean": 0.0005,
+          "min": -0.0057,
+          "max": 0.0069
+        }
+      }
+    },
+    "sen2sr": {
+      "overall_accuracy": {
+        "mean": 0.7262,
+        "std": 0.0205
+      },
+      "mean_iou": {
+        "mean": 0.4879,
+        "std": 0.0175
+      },
+      "mean_f1": {
+        "mean": 0.6069,
+        "std": 0.0194
+      },
+      "per_class_f1": {
+        "Built-up": 0.875,
+        "Tree cover": 0.6935,
+        "Shrub / grass": 0.1774,
+        "Cropland": 0.3412,
+        "Water / wetland": 0.9113,
+        "Bare / sparse": 0.6432
+      },
+      "difference_vs_bicubic": {
+        "overall_accuracy": {
+          "mean": -0.0087,
+          "min": -0.0101,
+          "max": -0.0073
+        },
+        "mean_iou": {
+          "mean": -0.0051,
+          "min": -0.0077,
+          "max": -0.0035
+        },
+        "mean_f1": {
+          "mean": -0.0042,
+          "min": -0.0064,
+          "max": -0.0012
+        }
+      }
+    }
+  }
+}

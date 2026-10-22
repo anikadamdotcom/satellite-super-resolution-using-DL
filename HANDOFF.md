@@ -19,7 +19,7 @@ Semester-7 deep-learning project (team: Shantanu Vasagadekar, Aniruddha Kadam, S
    | SEN2SR (ESA, real-trained) | −0.12 dB | 15 / 42 | 0.9412 | 1.776 |
 
    RCAN adds about 3x more high-frequency energy than bicubic, but that detail is wrong. Visible striping appears in `docs/sr_visual_comparison.png`. This is the synthetic-training gap that retraining should fix.
-4. **Mapping experiment** (`mapping_experiment.py`). The same U-Net is trained on native / bicubic / RCAN / SEN2SR inputs (3 seeds, 1200 steps, CPU), scored against WorldCover on the 8 test sites. **Still running on laptop 1 when this was written.** Results (`results/mapping_experiment.json`) will be pushed from laptop 1 when done. Early seed-0 test mean IoU: native 48.0%, bicubic 50.8%. Don't re-run it; pull later.
+4. **Mapping experiment** (`mapping_experiment.py`, finished). The same U-Net is trained on native / bicubic / RCAN / SEN2SR inputs (3 seeds, 1200 steps, CPU), scored against WorldCover on the 8 test sites. Test mean IoU: native 47.8%, **bicubic 49.3%, RCAN 49.3%**, SEN2SR 48.8% (seed spread about ±2). SR adds nothing over bicubic for mapping. Full write-up: **`SR_COMPARISON.md`**. Don't re-run it.
 5. **App changes.** The Compare view now shows Original | Enhanced | **change-vs-bicubic map** (`results_export.compose_compare`, `difference_from_bicubic`). Every enhanced export (PNG text chunk, JPEG EXIF, GeoTIFF tags `derived_product=true`, `TIFFTAG_IMAGEDESCRIPTION`) is labelled as derived imagery (`geo_io.derived_note`). Tests: `tests/test_derived_exports.py`, `tests/test_sr_comparison.py`.
 6. Test status on laptop 1: all suites pass in `.venv-cpu` once `requirements-onnx.txt` is installed.
 
@@ -90,5 +90,5 @@ Goal: an RCAN trained on **real Sentinel-2 10 m → VENµS 5 m pairs**, compared
 
 - Report results honestly with their limits. The project's docs are deliberately candid. Never claim real 5 m detail.
 - Commit only when asked. Use clear commit messages. Data, venvs and large weights stay out of git (`.gitignore` already covers `datasets/`, `.venv*/`, `checkpoints/real/`, `checkpoints/external/`).
-- Laptop 1 may push the finished mapping-experiment results and a results doc (`SR_COMPARISON.md`). Run `git pull` before starting and before committing.
+- Run `git pull` before starting and before committing. When retraining is done, add the new RCAN's numbers to `SR_COMPARISON.md` next to the old ones.
 - Keep explanations to the user short and plain.
