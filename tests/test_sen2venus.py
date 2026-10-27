@@ -1,4 +1,5 @@
 """SEN2VENµS preparation, the SR-only patch dataset, the compensated loss and train.py --task sr."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 from pathlib import Path
 import json
 import subprocess
@@ -7,10 +8,10 @@ import tempfile
 import unittest
 import numpy as np
 import torch
-from data import SRPatchDataset
+from satsr.data import SRPatchDataset
 from prepare_sen2venus import prepare, patch_filter
 from train import compensated_l1
-from models.common import read_checkpoint
+from satsr.models.common import read_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -83,7 +84,7 @@ class Sen2VenusTests(unittest.TestCase):
             for site, seed in (("AAA", 1), ("BBB", 2), ("CCC", 3)):
                 fake_site(td, site, seed=seed, n=4)
             prepare(td, Path(td)/"npy", dict(train=["AAA"], val=["BBB"], test=["CCC"]))
-            result = subprocess.run([sys.executable, str(ROOT/"train.py"), "--task", "sr", "--data", str(Path(td)/"npy"),
+            result = subprocess.run([sys.executable, str(ROOT/"scripts"/"train.py"), "--task", "sr", "--data", str(Path(td)/"npy"),
                                      "--output", str(Path(td)/"out"), "--epochs", "1", "--batch-size", "2", "--crop", "16",
                                      "--workers", "0", "--device", "cpu", "--lr", "2e-4"],
                                     cwd=td, text=True, capture_output=True, timeout=120)

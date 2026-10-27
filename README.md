@@ -1,244 +1,157 @@
-# Satellite Super-Resolution and Land-Cover Mapping
+# Sentinel-2 Super-Resolution and Land-Cover Mapping
 
-A working deep learning mini-project: real imagery -> 2x RCAN enhancement and real-pretrained land-cover detection -> maps and GIS exports.
+[![tests](https://github.com/Aniruddha-Kadam-dev/satellite-super-resolution-using-DL/actions/workflows/tests.yml/badge.svg)](https://github.com/Aniruddha-Kadam-dev/satellite-super-resolution-using-DL/actions/workflows/tests.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c)
+![License](https://img.shields.io/badge/license-GPL--3.0-green)
 
-**Team:** Shantanu Vasagadekar (1012412110), Aniruddha Kadam (1012412113), Shrihari Kshirsagar (1012412139).
+An RCAN model that upsamples Sentinel-2 imagery 2x (10 m → 5 m), **trained on real satellite image pairs**, plus a desktop app that turns a satellite crop into a land-cover map and GIS-ready exports.
 
-The demonstration inputs in `demo_images/` are **genuine Sentinel-2 L2A crops** with measured B02/B03/B04/B08 bands and real georeferencing. Source dates, URLs, crop windows and checksums are recorded in [demo_images/manifest.json](demo_images/manifest.json).
+The project also asks whether super-resolution is worth it. On held-out real data the model beats bicubic interpolation, but only by about half a decibel, and super-resolved input did **not** improve land-cover mapping in our benchmark. Both results are reported below with their limits.
 
-The default land-cover detector combines **Hugging Face SegFormer-B0 and OpenEarthMap SparseMask**, pretrained on real labeled imagery. It detects from the original image and applies NIR checks only to measured satellite bands. Roads, buildings, vegetation, water, bare land and developed space remain distinct. The fixed eight-image LoveDA audit improved from **77.17% to 79.80% pixel accuracy**; the requested 85% threshold is **not met**. See [Hugging Face integration and full limitations](HF_MODEL.md). No accuracy guarantee applies to arbitrary uploads.
+![Desktop app: land-cover map over a satellite image](docs/app_preview.png)
 
-The app's RCAN (`checkpoints/demo/rcan.pt`) is **trained on real image pairs**: Sentinel-2 10 m patches matched with same-day VENµS 5 m images (SEN2VENµS dataset). On two held-out Indian sites it beats bicubic by a small margin (+0.47 dB PSNR after correcting for sensor misregistration, +0.09 dB raw); see [Real-data RCAN training](#real-data-rcan-training-sen2venµs). The earlier synthetic-trained RCAN is kept as `checkpoints/demo/rcan_synthetic.pt`; on the same real test it scored *below* bicubic. The optional U-Net is still trained on procedural scenes only.
+## Results
 
-![Application preview](docs/app_preview.png)
+**Super-resolution on real data.** Sentinel-2 10 m patches are upsampled 2x and scored against same-day 5 m images from the VENµS satellite (SEN2VENµS dataset). The test uses 2,000 patches from two Indian sites that were not used in training.
 
-## Run the application
+| Method | PSNR raw | PSNR, registration-compensated | Gain vs bicubic | Patches better than bicubic | SAM |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Bicubic | 39.08 dB | 40.09 dB | 0 | n/a | 1.97° |
+| RCAN trained on synthetic data | 38.83 dB | 39.80 dB | −0.29 dB | 6 / 2000 | 2.06° |
+| **RCAN trained on SEN2VENµS (this repo)** | **39.17 dB** | **40.55 dB** | **+0.47 dB** | **1638 / 2000** | **1.83°** |
 
-Python 3.10 or newer is required. From this project directory:
+- **Synthetic vs real training data.** The same network trained on synthetic data is *worse* than bicubic on real imagery. Training on real pairs turns it into a consistent, though small, improvement, with similar gains at both sites (+0.48 / +0.46 dB).
+- **Raw vs compensated.** The two sensors are misregistered by about one 5 m pixel. "Compensated" scores remove the best ±2 px shift and each band's mean offset for every method, as in the PROBA-V challenge's cPSNR. Without that correction the gain is only +0.09 dB.
 
-```powershell
+**Does super-resolution help mapping?** The same U-Net was trained on each input type and scored against ESA WorldCover labels at 8 held-out Indian sites (3 seeds):
+
+| Input | Mean IoU |
+| --- | ---: |
+| Original 10 m | 47.8% ± 2.2 |
+| Bicubic 2x | 49.3% ± 1.6 |
+| RCAN 2x (synthetic-trained) | 49.3% ± 2.1 |
+| ESA SEN2SR | 48.8% ± 1.8 |
+
+Upsampling helps a little, but bicubic already provides that gain. The differences between methods are smaller than the variation between seeds. WorldCover labels are 10 m, so this test cannot reward detail finer than 10 m. The experiment ran before retraining, so it used the synthetic-trained RCAN. Full write-up: [docs/SR_COMPARISON.md](docs/SR_COMPARISON.md).
+
+**Land-cover detector.** A pretrained SegFormer-B0 + OpenEarthMap SparseMask ensemble with NIR-based corrections reaches 79.8% pixel accuracy on a fixed 8-image LoveDA audit (up from 77.2%). See [docs/LAND_COVER.md](docs/LAND_COVER.md).
+
+## How it works
+
+```mermaid
+flowchart LR
+    A["Sentinel-2 crop<br/>B02 B03 B04 B08, 10 m"] --> B["RCAN 2x<br/>(&lt;1M params)"]
+    B --> C["Enhanced image<br/>5 m grid"]
+    A --> D["SegFormer + SparseMask<br/>+ NIR checks"]
+    D --> E["Land-cover map"]
+    C --> F["Exports: PNG, GeoTIFF,<br/>JPEG+world file, ZIP report"]
+    E --> F
+```
+
+- **Model:** RCAN (residual channel attention network) with 32 features and 3 residual groups of 4 blocks, plus a bicubic skip connection.
+- **Training:** bf16 mixed precision on an 8 GB laptop GPU, with a loss that ignores misregistration (shift- and bias-compensated L1). A weak consistency term keeps the downsampled output equal to the input.
+- **Detection input:** land cover is detected from the *original* image, not the enhanced one, because the mapping experiment found no benefit from super-resolved input.
+- **Export labelling:** enhanced exports are tagged as derived imagery (GeoTIFF tag `derived_product=true`, PNG/JPEG metadata).
+- **Compare view:** the app shows a change-vs-bicubic map, so users can see where the model altered the image.
+- **CPU-only option:** an ONNX export runs without PyTorch. The export script checks it against PyTorch on three input sizes.
+
+## Quick start
+
+```bash
+git clone https://github.com/Aniruddha-Kadam-dev/satellite-super-resolution-using-DL.git
+cd satellite-super-resolution-using-DL
 python -m pip install -r requirements.txt
-python L1BSR-GUI.py
+python app.py
 ```
 
-The `checkpoints/demo/rcan.pt`, `landcover_real.pt` and `unet.pt` files are already trained. The GUI loads the selected detector automatically when processing starts. **CPU is the default**, including on computers with a GPU. Leave **Run without GPU (CPU)** checked near the top of the sidebar to run the complete enhancement, detection and export pipeline on a normal laptop. Uncheck it to use an available NVIDIA CUDA GPU. Without CUDA, the toggle remains checked and disabled, and the app explains that it is running on CPU. PyTorch must load before PyQt on Windows (the application handles this).
+Pick a **Sentinel-2** sample from the sidebar and press **Run all**. The app runs on CPU by default, and trained weights are included in `checkpoints/demo/`. On Windows you can instead double-click `setup_cpu.bat` once, then `run_app.bat`.
 
-For your friend's Windows laptop, copy the project folder including `checkpoints/` and `demo_images/`, install 64-bit Python 3.10 or newer, then double-click **setup_cpu.bat** once and **run_app.bat** to launch. Setup creates a local `.venv-cpu` and installs the tested PyTorch 2.11 CPU build from the [official PyTorch CPU wheel index](https://pytorch.org/get-started/previous-versions/). A CUDA installation or NVIDIA driver is not needed. Internet is needed for setup; the included samples and models run offline afterward. Create the environment on each laptop rather than copying a virtual environment from another machine.
+Command-line inference:
 
-Switch devices only while idle. The app loads both replacement models before committing, preserves the selected image and chosen model folder, clears old processed results on success, and restores the previous device/results if loading fails. Re-run **Run all** after switching. CPU execution uses at most four threads to avoid excessive thread-pool overhead on small tiles. CPU processing can take longer than GPU processing; start with the included 256x256 crops.
-
-1. Use **Choose image** above the preview, **Open image** in the sidebar, or the sample list. The chooser opens the demo folder with shortcuts to Downloads and Pictures, and remembers your selected folder.
-2. Press **Run all (enhance + map)** to produce every result. You can also use **Enhance (2x)** and **Detect** separately.
-3. Use Original, Enhanced, Compare, Map, Map on photo and Scores views. Compare shows the original, the RCAN result and a **change-vs-bicubic map** (darker blue = RCAN changed the pixel more, up to 0.05 reflectance). A change shows where the model acted; it is not proof of real detail. Enhanced PNG, JPEG and GeoTIFF exports are labelled as derived imagery in their metadata (`derived_product=true` in GeoTIFF tags).
-4. The **Downloads** panel below the preview has direct buttons for image PNG/JPG, map PNG/TIF, GeoTIFF, the current view, scores PNG, report and **All results ZIP**. It remains visible at the minimum window size. GeoTIFF requires a georeferenced source.
-5. Leave **Combined real models** selected for actual uploads. **Hugging Face SegFormer (fast)** uses less processing time; **SparseMask (previous model)** and **U-Net experiment / custom model** preserve the earlier workflows. Changing this option clears stale maps while keeping enhancement. The sample list includes fine-resolution Palu for roads and buildings.
-6. Use **Choose model folder** with `rcan.pt`, `landcover_real.pt` and the `hf_segformer/` subfolder for the combined detector. HF alone needs `rcan.pt` and `hf_segformer/`; synthetic mode needs `rcan.pt` and `unet.pt`. Missing real weights raise an error rather than silently substituting synthetic weights.
-
-Processing runs in a worker thread. Large inputs use overlapping inference tiles to bound accelerator memory. Tile context and RCAN channel attention can produce small differences from whole-image inference.
-
-Inference inputs are capped at 1024 pixels on their longest side. Larger rasters are resampled while preserving their footprint and updating the affine transform. Use smaller geographic crops when you need to preserve native pixel spacing.
-
-## Real-data RCAN training (SEN2VENµS)
-
-The app's RCAN was trained on SEN2VENµS (Michel et al., 2022, *Data* 7(7):96; Zenodo record 6514159, CC BY-NC 4.0): Sentinel-2 10 m B02/B03/B04/B08 patches (128x128) paired with VENµS 5 m patches (256x256) acquired the same day. Sites are split so no site appears in two splits:
-
-| Split | Sites | Patches |
-| --- | --- | ---: |
-| Train | ATTO, ESTUAMAR, SUDOUE-4, K34-AMAZ, MAD-AMBO, LERIDA-1, JAM2018 | 11,745 |
-| Validation | ALSACE | 2,647 |
-| Test | BENGA (West Bengal, India), KUDALIAR (Telangana, India) | 13,039 |
-
-```powershell
-python download_sen2venus.py          # ~17 GB, resumable, MD5-checked
-python prepare_sen2venus.py           # -> datasets/sen2venus_npy/{train,val,test}
-python train.py --task sr --data datasets/sen2venus_npy --output checkpoints/real/runA --epochs 80 --batch-size 16 --crop 96 --lr 2e-4
-python evaluate_sen2venus.py --models old_synthetic=checkpoints/demo/rcan_synthetic.pt new_real=checkpoints/demo/rcan.pt
+```bash
+python scripts/predict.py --image demo_images/sentinel2_urban_delhi_2023-12-05.tif --output outputs/delhi
 ```
 
-Same architecture as before (32 features, 3 residual groups x 4 blocks, bicubic skip, under 1 M parameters), so CPU and ONNX speed are unchanged. VENµS and Sentinel-2 images are misregistered by about one 5 m pixel and differ slightly in band response, so the training loss is a **shift- and bias-compensated L1**: the best integer shift within ±2 px and each band's mean offset are removed before scoring, as in the PROBA-V challenge's cPSNR. A weak term (weight 0.1) keeps the 2x2 average of the output equal to the Sentinel-2 input. This way the model cannot learn to shift or recolour the image. Trained on an RTX 5050 Laptop GPU (bf16 mixed precision, ~60 s/epoch). The checkpoint was selected by validation loss at **epoch 6 of 80**: later epochs kept improving on training sites but not on the validation site.
+## Reproduce the training and evaluation
 
-Held-out test (2,000 evenly spaced patches from BENGA and KUDALIAR, scored against the real VENµS 5 m image, data range 10000; `results/sen2venus_test_runA.json`):
-
-| Method | PSNR raw | PSNR compensated | Gain vs bicubic (compensated) | Patches better than bicubic | SSIM compensated | SAM compensated |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Bicubic | 39.08 dB | 40.09 dB | 0 | n/a | 0.9664 | 1.974° |
-| Old RCAN (synthetic) | 38.83 dB | 39.80 dB | −0.29 dB | 6 / 2000 | 0.9630 | 2.062° |
-| **New RCAN (SEN2VENµS)** | **39.17 dB** | **40.55 dB** | **+0.47 dB** | **1638 / 2000** | **0.9697** | **1.826°** |
-
-The gain is similar on both sites (BENGA +0.48 dB, KUDALIAR +0.46 dB). Limits: the improvement is small, as the literature expects at 2x. Most of the raw error is sensor misregistration that no method can fix. VENµS is a different sensor, so this measures "closer to a real 5 m image", not recovery of objects smaller than 10 m. ESA's SEN2SR has not yet been scored on this test. Output remains derived imagery and is labelled as such in exports.
-
-## Reproduce the synthetic learning experiment
-
-```powershell
-python train.py --demo --epochs 30 --samples 128 --output checkpoints/demo
-python predict.py --demo --output outputs/synthetic_experiment
-python plot_training.py
-python -m pip install -r requirements-dev.txt
-python -m unittest discover -s tests -v
+```bash
+python scripts/download_sen2venus.py      # ~17 GB, resumable, MD5-checked
+python scripts/prepare_sen2venus.py       # -> datasets/sen2venus_npy/{train,val,test}
+python scripts/train.py --task sr --data datasets/sen2venus_npy --output checkpoints/real/runA --epochs 80 --batch-size 16 --crop 96 --lr 2e-4
+python scripts/evaluate_sen2venus.py --models old_synthetic=checkpoints/demo/rcan_synthetic.pt new_real=checkpoints/demo/rcan.pt
 ```
 
-Training uses 128 scenes, with 32 separate validation scenes and 32 separate test scenes. The three splits use disjoint random seeds. Each scene has 64x64 four-band HR imagery and five-class labels; LR is generated using antialiased bicubic downsampling to 32x32. Adam trains RCAN with L1 loss and U-Net with cross-entropy. The best checkpoint for each task is selected by validation loss. The test set is evaluated once after training. Results and all epoch losses are saved in `training_report.json`.
+The data is split by site, so no site appears in two splits:
 
-This section describes the original synthetic experiment. Its RCAN is kept as `checkpoints/demo/rcan_synthetic.pt` (ONNX: `checkpoints/demo/rcan_synthetic.onnx`); the U-Net in `checkpoints/demo/unet.pt` and `training_report.json` come from this run. The included run used an NVIDIA GeForce RTX 3070 Ti Laptop GPU. Exact package versions are recorded in `requirements-tested.txt` and the training report. Floating-point results may differ across platforms.
-
-| Held-out synthetic test metric | Bicubic | Trained RCAN |
-| --- | ---: | ---: |
-| PSNR (data range 10000) | 30.08 dB | 35.74 dB |
-| SSIM | 0.8928 | 0.9717 |
-| Spectral angle | 5.024 degrees | 2.391 degrees |
-
-The **RCAN -> U-Net** pipeline achieved **98.13% pixel accuracy** and **94.38% mean IoU** on those synthetic test scenes. These results apply to this generator and do not establish real satellite performance. U-Net is trained on HR imagery; its full pipeline test uses RCAN predictions, so reconstruction errors are included.
-
-![Training and test results](docs/training_results.png)
-
-## Use real datasets
-
-Use co-registered B02, B03, B04 and B08 imagery, in that order, with **uint16 reflectance scaled by 10000**. Single-channel GeoTIFF masks use these IDs:
-
-| ID | Class |
+| Split | Sites |
 | --- | --- |
-| 0 | Buildings |
-| 1 | Roads |
-| 2 | Vegetation |
-| 3 | Water |
-| 4 | Bare land |
-| 255 | Unlabeled / ignored |
+| Train | 7 sites |
+| Validation | ALSACE |
+| Test | BENGA, KUDALIAR (India) |
 
-Split by independent geographic scene **before** extracting patches. Keep overlapping areas out of different splits. HR and masks must have the same dimensions, CRS and transform. Measured LR imagery must cover the exact same footprint at half the HR width and height. If measured LR is unavailable, the preparation script generates degraded LR; this evaluates reconstruction under the chosen degradation, rather than recovery of independently observed spatial detail.
+Training takes about 60 s per epoch on an RTX 5050 Laptop GPU. The mapping experiment and SEN2SR comparison steps are in [docs/SR_COMPARISON.md](docs/SR_COMPARISON.md).
 
-Prepare this structure (each `.tif` in `hr` contains all four bands):
+## Tests
+
+```bash
+python -m pip install -r requirements/dev.txt
+python -m unittest discover -s tests
+```
+
+The suite has 103 tests: 97 pass and 6 skip when there is no CUDA GPU or optional SEN2SR install. GitHub Actions runs it on every push. It covers:
+
+- model and metric correctness
+- strict checkpoint loading
+- ONNX/PyTorch parity
+- raster I/O (CRS, transforms, NoData)
+- rejecting corrupt uploads
+- atomic exports
+- end-to-end GUI workflows on the five real Sentinel-2 scenes
+- each app starting cleanly in a fresh process
+
+## Repository layout
 
 ```text
-raw_data/
-  train/
-    hr/scene_001.tif
-    masks/scene_001.tif
-    lr/scene_001.tif     # optional
-  val/
-    hr/scene_002.tif
-    masks/scene_002.tif
-    lr/scene_002.tif     # optional
-  test/
-    hr/scene_003.tif
-    masks/scene_003.tif
-    lr/scene_003.tif     # optional
+src/satsr/            library: RCAN, U-Net, detectors, raster I/O, metrics, exports
+  models/             RCAN, U-Net, SegFormer/SparseMask wrappers, SEN2SR wrapper
+scripts/              command-line tools: train, predict, evaluate, download, prepare
+tests/                unittest suite (+ fixtures)
+app.py                desktop app (PyQt5, PyTorch)
+app_onnx.py           lightweight super-resolution app (ONNX Runtime, no PyTorch)
+checkpoints/demo/     trained weights used by the app
+demo_images/          five real Sentinel-2 L2A crops with provenance
+results/              raw JSON results behind every number above
+docs/                 user guide, experiment write-ups, detector notes, related work
 ```
 
-Use valid imagery crops of the same dimensions within each batch. HR dimensions must be even and at least 16x16. Imagery NoData must be cropped out; labels may contain 255. Raster scale/offset metadata is applied first and interpreted as physical reflectance. Untagged floating-point reflectance with a maximum <=1.5 is converted to the integer scale; other values are treated as digital numbers. Supply reflectance in the documented band order and verify product-specific units. Preparation supports both .tif and .tiff and publishes only after every split has validated.
+## Limitations
 
-```powershell
-python prepare_dataset.py --input raw_data --output datasets/satellite
-python train.py --data datasets/satellite --epochs 100 --batch-size 8 --output checkpoints/real
-python predict.py --image your_four_band_scene.tif --models checkpoints/real --output outputs/real
-```
+- **Small gain.** The super-resolution gain is small, which is in line with the literature for 2x on Sentinel-2. The best checkpoint came at epoch 6 of 80; after that the model overfit the 7 training sites, so more training sites are the obvious next step.
+- **Narrow test set.** The test covers two sites, both in India.
+- **What the gain measures.** VENµS is a different sensor, so the result measures "closer to a real 5 m image", not recovery of objects smaller than 10 m.
+- **Comparisons still to run.** ESA's SEN2SR has not yet been scored on the SEN2VENµS test. The mapping experiment has not been re-run with the real-trained RCAN.
+- **Derived imagery.** Enhanced images are model output, not measured imagery.
+- **No accuracy guarantee for other inputs.** Map accuracy on arbitrary uploads is not guaranteed; see [docs/LAND_COVER.md](docs/LAND_COVER.md).
 
-You may also supply NPZ files directly inside `train/`, `val/` and `test/`. Each file contains `hr` (2H x 2W x 4 uint16), `lr` (H x W x 4 uint16, optional), and `mask` (2H x 2W class IDs). The code validates layout and IDs; the user must verify source provenance, class definitions and geographic separation.
+## Documentation
 
-For inference on separate single-band files:
+- [User guide](docs/USER_GUIDE.md): every app feature, custom datasets, the ONNX app, the synthetic experiment
+- [SR comparison](docs/SR_COMPARISON.md): all three experiments in detail
+- [Land-cover detector](docs/LAND_COVER.md): models, per-class accuracy, spectral checks, limits
+- [Related work](docs/RELATED_WORK.md): prior work, competing tools, research frontier
 
-```powershell
-python predict.py --bands B02.tif B03.tif B04.tif B08.tif --models checkpoints/real --output outputs/scene
-```
+## Authors and credits
 
-The GUI's **Open four satellite bands** button also supports aligned individual rasters.
+Shantanu Vasagadekar, Aniruddha Kadam and Shrihari Kshirsagar.
 
-## Evaluation and geographic interpretation
+Data and model credits:
 
-- PSNR, SSIM and SAM in the training report use held-out HR ground truth. Perfect PSNR is capped at 100 dB for finite report serialization. SSIM uses a 7x7 uniform window, averaged across bands. SAM excludes both-zero background; a single-zero spectrum receives 90 degrees.
-- The GUI has no HR reference. Its metrics measure **similarity to bicubic**, not reconstruction accuracy. Higher edge energy measures sharpness and does not prove recovery of real structures.
-- Softmax scores are uncalibrated. The Scores view shows the score for each output label, not validated confidence or a ground-truth error map.
-- PNG/JPEG and ordinary RGB TIFF images have estimated NIR for the four-band enhancement contract. The real detector uses their original RGB alone; no spectral corrections use estimated NIR. Synthetic-detector maps on RGB remain illustrative. RGBA alpha is never treated as measured NIR.
-- Ordinary images retain no invented CRS. Geographic area is unknown. Projected rasters use the affine determinant and CRS unit conversion to calculate pixel area. Area remains unavailable for geographic latitude/longitude grids.
-- GeoTIFF exports preserve source CRS, extent, band descriptions and validity masks. Pixel spacing halves for 2x output. This changes sampling, without demonstrating twice the real spatial resolving power.
-- Label GeoTIFFs include a class palette, with 255 as NoData; class 0 remains a valid building label. The synthetic sample's georeference is illustrative.
-- Four bands support NDVI and green/NIR NDWI. Red/NIR contrast is included as a feature but is not NDBI; SWIR is required for NDBI.
-- Missing real-detector checkpoints raise an error. The synthetic detector can explicitly use a spectral-rule baseline when weights are absent. Invalid or incompatible checkpoints raise an error instead of silently accepting partial weights.
+- Contains modified Copernicus Sentinel data (2021–2024).
+- SEN2VENµS: Michel et al., 2022, *Data* 7(7):96, CC BY-NC 4.0.
+- ESA WorldCover 2021: CC BY 4.0.
+- SEN2SRLite (ESA OpenSR): MIT.
+- SegFormer via Hugging Face.
+- OpenEarthMap SparseMask: see `src/satsr/models/oem_sparsemask/LICENSE`.
 
-## CPU-only ONNX super-resolution
-
-The secondary GUI supports **super-resolution only**, using the exported model. It does not require PyTorch for inference.
-
-```powershell
-python -m pip install -r requirements-onnx.txt
-# Conversion also requires the main PyTorch dependencies:
-python convert_to_onnx.py --checkpoint checkpoints/demo/rcan.pt --output rcan_model.onnx
-python L1-BSR-GUI-ONNX.py
-```
-
-An exported `rcan_model.onnx` is included. The conversion script checks the ONNX model and verifies numerical parity with PyTorch on three input sizes, including a single pixel. Input band order and normalization are recorded and checked by the ONNX GUI. The ONNX GUI accepts ordinary images and four-band TIFFs, processes overlapping tiles in a worker, and supports PNG/JPEG, GeoTIFF and JPEG + JGW + PRJ exports. Replacing any image, band or model invalidates previous outputs.
-
-![ONNX application preview](docs/onnx_preview.png)
-
-## Project files
-
-- `models/rcan.py`: channel attention, residual groups, PixelShuffle and checkpoint-backed inference.
-- `models/unet_segmentation.py`: eight-feature U-Net, class probabilities and optional morphology.
-- `models/real_landcover.py`, `models/oem_sparsemask/`: real-pretrained detector, native-image inference, channel mapping and measured-NIR checks.
-- `REAL_ACCURACY.md`, `evaluate_real_accuracy.py`: real-reference results and their limitations.
-- `models/common.py`: preprocessing contracts, strict checkpoint checks and tiled inference.
-- `models/evaluation_metrics.py`: reconstruction metrics, confusion matrices and IoU.
-- `data.py`, `prepare_dataset.py`, `train.py`: data generation, real-data conversion and learning.
-- `predict.py`: complete command-line inference and exports.
-- `geo_io.py`: raster alignment, validity masks, transforms and class exports.
-- `PROJECT_REPORT.md`: methods, measured results and limitations.
-- `tests/test_pipeline.py`: model, metrics, raster and asynchronous GUI regression checks.
-- `download_sentinel_demo.py`: public Sentinel-2 crop downloads and provenance.
-- `tests/test_real_satellite.py`: real-scene radiometry, metadata and both GUI/export workflows.
-- `tests/fixtures/formats/`: generated software format fixtures, outside the real demonstration dataset.
-
-The existing presentation is preserved. Use `PROJECT_REPORT.md` and the measured training results to update any older presentation claims about pretrained models or real-world accuracy.
-
-## Real satellite demonstration and audit
-
-`demo_images/` contains **five genuine Sentinel-2 L2A scenes**, downloaded from the [public Earth Search Sentinel-2 COG archive](https://registry.opendata.aws/sentinel-2-l2a-cogs/). Each is a 256x256 native 10 m crop (2.56 km across), with measured B02/B03/B04/B08 uint16 bands, original UTM georeferencing, calibration and validity masks. All inputs and provenance together occupy about 3.9 MB.
-
-| Scene | Acquisition UTC | Area |
-| --- | --- | --- |
-| Urban | 2023-12-05 | Central New Delhi |
-| Agriculture | 2023-12-03 | Farmland east of Ludhiana, Punjab |
-| Vegetation | 2023-12-30 | Western Ghats near Koyna |
-| Water | 2024-02-28 | Pavana Reservoir |
-| Mixed | 2024-02-28 | Pune city and the Mula-Mutha river |
-
-![Real Sentinel-2 crops](docs/sentinel2_dataset.png)
-
-Launch `python L1BSR-GUI.py`, select a **Sentinel-2** entry from the sample list, and press **Run all**. Open the next real scene immediately without restarting. Separate aligned files are in `demo_images/satellite_bands/<area>/`. No generated scenes, screenshots or ordinary photographs appear in the demo chooser.
-
-The image chooser uses an explicit starting directory and shortcuts rather than leaving you at My Computer. It remembers the last chosen image folder. Save dialogs start in Downloads and remember the last save folder. PNG, JPEG, TIFF, BMP and WebP have individual filters.
-
-Use **Run all** for a complete result, then **All results ZIP** to download the original/enhanced images, land-cover map, overlay, score image and NumPy arrays, raw four-band enhancement, Markdown and JSON reports. Georeferenced inputs also include enhanced/class GeoTIFFs and JPEG world-file/CRS sidecars. ZIP publication is atomic and runs in a worker. **Current view** can download Compare, Map on photo, or any other displayed view as PNG.
-
-The selected Earth Search COGs already have their BOA offset applied. Their effective offset is zero; subtracting the original JP2 offset again would corrupt the spectra. The downloader records the original STAC values and effective calibration. Original source COG DN values are preserved without synthesis or resampling. SCL is used for quality screening; it is not five-class ground truth.
-
-```powershell
-# Included real scene, with full CLI outputs:
-python predict.py --image demo_images/sentinel2_urban_delhi_2023-12-05.tif --output outputs/real_satellite/urban_delhi
-# Download another copy into an EMPTY directory:
-python download_sentinel_demo.py --output new_demo_images
-```
-
-CLI prediction also defaults to CPU. Pass `--device cuda` to opt into CUDA. Real-data training accepts `--device cpu` for a laptop, though larger training runs can be slow.
-
-Source item JSON, band URLs, acquisition dates, crop windows, native grids, calibration and SHA-256 values are in `demo_images/sources/` and `demo_images/manifest.json`. Reports and GeoTIFF exports preserve acquisition/source attribution. See `demo_images/README.md` for attribution and usage. These are real inference/workflow inputs; no independent Sentinel-2 labels or HR reference are included. The default detector is real-pretrained, but its fine-resolution training differs from these scenes. Independent accuracy on these locations is not established.
-
-Uploads validate the actual file format, complete decoding, dimensions and band layout. Empty, corrupt, truncated, mislabeled, unsupported, entirely transparent and entirely NoData inputs are rejected while preserving the previous valid scene. Animated WebP and multi-page TIFF are deliberately unsupported; export a still frame first. Ordinary photos have a 40-million-pixel decode limit and all inference inputs are resized to at most 1024 pixels on their longest side.
-
-Valid pixels alone determine display stretching and similarity metrics. Before/after views reuse the same display bounds. PNG outputs preserve invalid pixels as transparency, label rasters use 255 as NoData, and GeoTIFF validity masks are internal. Image/report/checkpoint/ONNX writes are staged before replacement. JPEG world files and CRS sidecars are committed together; command-line output sets roll back on commit failure and remove stale generated GeoTIFFs when the next input has no CRS.
-
-The 26 generated format fixtures now live in `tests/fixtures/formats/`, outside the demonstration dataset. They cover PNG/JPEG/BMP/WebP, palette, alpha, EXIF, CMYK, 16-bit, tiny and large inputs. `generate_demo_images.py` regenerates only these software fixtures and refuses to write into `demo_images/`.
-
-The regression suite exercises all five real scenes through both GUIs and geographic exports, alongside format handling, repeated chooser/error recovery, memory, backend parity, upload rejection, failed writes, CLI reuse and custom-dataset training. See `AUDIT_REPORT.md` and `audit_results.json` for the recorded run. Tests validate software behavior and source-data preservation, not real-world reconstruction/classification accuracy.
-
-The earlier CPU update passed all **71 tests** in the CUDA-capable environment and **69 applicable tests** in a fresh CPU-only installation (two CUDA-only checks skipped). Seven checks were added for the real detector: the full suite passed **78/78** in the CUDA-capable installation and **76/76 applicable checks** in the CPU-only build, with two expected GPU skips. Final results are in `real_detector_audit.json`. All five real samples are processed and exported on CPU. `requirements-cpu-tested.txt` records the independent installation. The new detector adds processing time; allow several seconds for small scenes and longer for large inputs.
-
-## Submission and offline showcase
-
-`SHOWCASE_GUIDE.md` contains preparation steps, a five-minute demonstration and accurate answers about reconstruction, predicted classes and evaluation. `showcase/` contains CPU outputs for all five genuine scenes, individual result ZIPs, and an original/enhanced/map/overlay overview. The real detector substantially reduces the reservoir-as-road error. Difficult small rivers, vegetation and building-like farmland predictions remain; `REAL_ACCURACY.md` records all reference comparisons and limitations.
-
-```powershell
-# Regenerate the real-scene results and verified source/results archive:
-python prepare_showcase.py
-python package_submission.py
-```
-
-`submission/L1BSR_Submission.zip` includes source, tests, license, checkpoints, ONNX model, real imagery and provenance, current reports, launchers and offline showcase results. It excludes local environments, unrelated files and the older unreviewed slide deck. Extract on the demonstration laptop and run setup_cpu.bat before the event while internet is available.
+Code is licensed under GPL-3.0.

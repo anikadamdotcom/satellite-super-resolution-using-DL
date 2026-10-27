@@ -1,3 +1,4 @@
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import json
 from pathlib import Path
 import shutil
@@ -9,7 +10,7 @@ import numpy as np
 import rasterio
 from rasterio.transform import Affine
 from PIL import Image
-from geo_io import (load_any_user_image, read_band, render_rgb, IMAGE_EXTENSIONS,
+from satsr.geo_io import (load_any_user_image, read_band, render_rgb, IMAGE_EXTENSIONS,
                     percentile_stretch, to_uint16)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,7 +119,7 @@ class FormatTests(unittest.TestCase):
         for bound in (0,-1,1.5,True):
             with self.assertRaises(ValueError):
                 load_any_user_image(DEMO/"scene_rgb.png",max_side=bound)
-        with patch("geo_io.MAX_PHOTO_PIXELS",10), self.assertRaisesRegex(ValueError,"pixel limit"):
+        with patch("satsr.geo_io.MAX_PHOTO_PIXELS",10), self.assertRaisesRegex(ValueError,"pixel limit"):
             load_any_user_image(DEMO/"scene_rgb.png")
         for array in (np.array([-1]),np.array([65536]),np.array([np.nan]),np.array([1j]),np.array([])):
             with self.assertRaises(ValueError):

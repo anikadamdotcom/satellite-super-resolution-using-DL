@@ -1,4 +1,5 @@
 """CPU-only operation and transactional device switching in the full GUI."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from pathlib import Path
@@ -9,7 +10,7 @@ import torch  # Must precede Qt on Windows.
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtTest import QTest
 from gui_utils import load_gui, wait_jobs
-from runtime_support import configure_cpu_threads
+from satsr.runtime_support import configure_cpu_threads
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENE = ROOT/"demo_images"/"sentinel2_urban_delhi_2023-12-05.tif"
@@ -19,7 +20,7 @@ class CpuModeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
-        cls.gui = load_gui("cpu_mode_gui", "L1BSR-GUI.py")
+        cls.gui = load_gui("cpu_mode_gui", "app.py")
 
     def setUp(self):
         self.windows = []
@@ -129,12 +130,12 @@ class CpuModeTests(unittest.TestCase):
 
     def test_cpu_thread_limit_bounds_oversubscription_and_preserves_smaller_limit(self):
         with patch.object(torch, "get_num_threads", return_value=32), \
-             patch("runtime_support.os.cpu_count", return_value=8), \
+             patch("satsr.runtime_support.os.cpu_count", return_value=8), \
              patch.object(torch, "set_num_threads") as set_threads:
             self.assertEqual(configure_cpu_threads(), 4)
             set_threads.assert_called_once_with(4)
         with patch.object(torch, "get_num_threads", return_value=2), \
-             patch("runtime_support.os.cpu_count", return_value=8), \
+             patch("satsr.runtime_support.os.cpu_count", return_value=8), \
              patch.object(torch, "set_num_threads") as set_threads:
             self.assertEqual(configure_cpu_threads(), 2)
             set_threads.assert_not_called()

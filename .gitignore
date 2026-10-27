@@ -1,81 +1,30 @@
-# ==============================================================================
-# L1BSR Project .gitignore
-# Excludes virtual environments, cache, scratch experiments, large archives,
-# and logs while ensuring all code, models, and real satellite imagery are tracked.
-# ==============================================================================
-
-# Python bytecode and interpreter caches
+# Python caches and packaging output
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
 .pytest_cache/
+*.egg-info/
+build/
+dist/
 
-# Virtual Environments (created per-machine via setup_cpu.bat)
-.venv/
+# Virtual environments (create per machine, e.g. with setup_cpu.bat)
 .venv*/
 venv/
 env/
-ENV/
-env.bak/
-venv.bak/
 
-# Test, evaluation, and execution logs
+# Logs and run outputs
 *.log
-*.log.*
-
-# Runtime outputs and user-generated download folders
 outputs/
-output/
-tmp/
-temp/
 
-# Large submission packages (97MB archive)
-submission/
-*.zip.tmp
-
-# Research scratch experiments & heavy non-runtime models (e.g. 313MB hf_segformer.pt)
-research/
-
-# PowerPoint codex scratch directories and node_modules (660MB+)
-.codex-ppt-*/
-.codex-*/
-node_modules/
-
-# OS and Editor metadata
-.DS_Store
-Thumbs.db
-ehthumbs.db
-desktop.ini
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Microsoft Office temporary and lock files
-~$*
-~WRL*.tmp
-
-# Unreferenced loose root screenshots
-Copernicus.png
-screen1 (Medium).png
-
-# Raw training datasets and non-demo checkpoint folders
+# Datasets and large weights (rebuilt with the scripts/download_*.py tools)
 datasets/
 raw_data/
 checkpoints/real/
-# External comparison weights (re-download with download_sen2sr.py)
 checkpoints/external/
 
-# ==============================================================================
-# Explicitly Tracked Deliverables (Do Not Ignore)
-# ==============================================================================
-# Real-life Sentinel-2 and high-resolution satellite imagery
-!demo_images/
-!demo_images/**
-
-# Pretrained demo deep learning model weights
-!checkpoints/demo/
-!checkpoints/demo/**
-!rcan_model.onnx
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+~$*

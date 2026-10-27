@@ -1,4 +1,5 @@
 """Difference-from-bicubic map and derived-imagery labels on enhanced exports."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 from pathlib import Path
 import tempfile
 import unittest
@@ -7,9 +8,9 @@ import numpy as np
 import rasterio
 from PIL import Image
 
-from geo_io import derived_note, load_any_user_image, save_image, save_jpeg_with_jgw, write_geotiff
-from models.rcan import L1BSRSR
-from results_export import (COMPARE_GAP, DIFF_RAMP, DIFF_SCALE_DN, compose_compare,
+from satsr.geo_io import derived_note, load_any_user_image, save_image, save_jpeg_with_jgw, write_geotiff
+from satsr.models.rcan import L1BSRSR
+from satsr.results_export import (COMPARE_GAP, DIFF_RAMP, DIFF_SCALE_DN, compose_compare,
                             difference_from_bicubic, difference_rgb)
 
 ROOT = Path(__file__).resolve().parents[1]

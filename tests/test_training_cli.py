@@ -1,3 +1,4 @@
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 from pathlib import Path
 from types import SimpleNamespace
 import json
@@ -10,7 +11,7 @@ import numpy as np
 import torch
 import rasterio
 from rasterio.transform import from_origin
-from data import SatelliteDataset, synthetic_scene, degrade
+from satsr.data import SatelliteDataset, synthetic_scene, degrade
 from prepare_dataset import prepare
 from train import preflight_datasets
 from predict import run_prediction, publish_outputs
@@ -37,7 +38,7 @@ class TrainingTests(unittest.TestCase):
                 write_raw(root/"raw",split,99111+i)
             count = prepare(root/"raw",root/"dataset")
             self.assertEqual(count,3)
-            result = subprocess.run([sys.executable,str(ROOT/"train.py"),"--data",str(root/"dataset"),
+            result = subprocess.run([sys.executable,str(ROOT/"scripts"/"train.py"),"--data",str(root/"dataset"),
                         "--output",str(root/"models"),"--epochs","1","--batch-size","1","--device","cpu"],
                         cwd=root,text=True,capture_output=True,timeout=60)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
@@ -93,7 +94,7 @@ class TrainingTests(unittest.TestCase):
     def test_nan_learning_rate_rejected_before_writing_checkpoints(self):
         with tempfile.TemporaryDirectory() as td:
             output = Path(td)/"weights"
-            result = subprocess.run([sys.executable,str(ROOT/"train.py"),"--demo","--lr","nan","--output",str(output)],
+            result = subprocess.run([sys.executable,str(ROOT/"scripts"/"train.py"),"--demo","--lr","nan","--output",str(output)],
                                     capture_output=True,text=True,timeout=30)
             self.assertNotEqual(result.returncode,0)
             self.assertFalse(output.exists())
@@ -151,7 +152,7 @@ class CommandLineTests(unittest.TestCase):
     def test_cli_from_another_working_directory_uses_project_models(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            result = subprocess.run([sys.executable,str(ROOT/"predict.py"),"--image",str(ROOT/"tests/fixtures/formats/scene_tiny.png"),
+            result = subprocess.run([sys.executable,str(ROOT/"scripts"/"predict.py"),"--image",str(ROOT/"tests/fixtures/formats/scene_tiny.png"),
                                      "--device","cpu","--output",str(root/"prediction")],
                                     cwd=root,capture_output=True,text=True,timeout=30)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)

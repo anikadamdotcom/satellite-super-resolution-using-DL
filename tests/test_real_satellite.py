@@ -1,4 +1,5 @@
 """Offline provenance and full application workflows on actual Sentinel-2 crops."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import os
 os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
 import hashlib
@@ -16,9 +17,9 @@ from rasterio.transform import Affine
 from rasterio.windows import Window
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtTest import QTest
-from geo_io import load_any_user_image, load_band_stack, output_valid_mask, IMAGE_EXTENSIONS
+from satsr.geo_io import load_any_user_image, load_band_stack, output_valid_mask, IMAGE_EXTENSIONS
 from download_sentinel_demo import asset_calibration, BANDS
-from generate_demo_images import generate_demo_images
+from generate_test_fixtures import generate_test_fixtures
 from gui_utils import load_gui, wait_jobs
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -84,15 +85,15 @@ class RealSourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             asset_calibration({"properties":{}},{"raster:bands":[dict(scale=1,offset=0)]})
         with self.assertRaisesRegex(ValueError,"reserved for real"):
-            generate_demo_images(DEMO)
+            generate_test_fixtures(DEMO)
 
 
 class RealApplicationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
-        cls.main = load_gui("real_main_gui","L1BSR-GUI.py")
-        cls.onnx = load_gui("real_onnx_gui","L1-BSR-GUI-ONNX.py")
+        cls.main = load_gui("real_main_gui","app.py")
+        cls.onnx = load_gui("real_onnx_gui","app_onnx.py")
 
     def setUp(self):
         self.errors = []

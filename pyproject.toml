@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "satsr"
+version = "1.0.0"
+description = "2x super-resolution (RCAN trained on real Sentinel-2/VENuS pairs) and land-cover mapping for Sentinel-2 imagery"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-only" }
+authors = [
+    { name = "Aniruddha Kadam" },
+    { name = "Shantanu Vasagadekar" },
+    { name = "Shrihari Kshirsagar" },
+]
+keywords = ["super-resolution", "sentinel-2", "remote-sensing", "rcan", "land-cover", "pytorch"]
+dependencies = [
+    "numpy>=1.24,<3",
+    "torch>=2.2,<3",
+    "PyQt5>=5.15,<6",
+    "rasterio>=1.3,<2",
+    "Pillow>=10,<13",
+    "scipy>=1.11,<2",
+    "matplotlib>=3.8,<4",
+]
+
+[project.optional-dependencies]
+onnx = ["onnxruntime>=1.17,<2", "onnx>=1.15,<2"]
+dev = ["onnxruntime>=1.17,<2", "onnx>=1.15,<2"]
+
+[project.urls]
+Repository = "https://github.com/Aniruddha-Kadam-dev/satellite-super-resolution-using-DL"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"satsr.models.oem_sparsemask" = ["LICENSE"]
