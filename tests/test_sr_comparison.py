@@ -1,4 +1,5 @@
 """Checks for the SR comparison and mapping experiment code (optional research tools)."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import importlib.util
 import unittest
 
@@ -6,7 +7,7 @@ import numpy as np
 import torch
 
 from download_mapping_benchmark import CLASSES, WORLDCOVER_TO_CLASS, worldcover_tile
-from models.sen2sr_lite import DEFAULT_DIR, FROM_SEN2SR, TO_SEN2SR, block_mean
+from satsr.models.sen2sr_lite import DEFAULT_DIR, FROM_SEN2SR, TO_SEN2SR, block_mean
 
 torch.set_num_threads(2)
 HAVE_SEN2SR = importlib.util.find_spec("sen2sr") is not None and (DEFAULT_DIR/"model.safetensor").is_file()
@@ -49,7 +50,7 @@ class ComparisonHelperTests(unittest.TestCase):
 class Sen2srModelTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        from models.sen2sr_lite import SEN2SRLite
+        from satsr.models.sen2sr_lite import SEN2SRLite
         cls.model = SEN2SRLite()
 
     def test_shapes_and_odd_sizes(self):

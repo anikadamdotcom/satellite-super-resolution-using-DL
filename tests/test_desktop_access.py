@@ -1,3 +1,4 @@
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import io
@@ -15,8 +16,8 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QMessageBox, QLineEdit
 from gui_utils import load_gui, wait_jobs
-from gui_support import open_image_dialog, save_dialog
-from geo_io import IMAGE_FILTER
+from satsr.gui_support import open_image_dialog, save_dialog
+from satsr.geo_io import IMAGE_FILTER
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT/"demo_images"
@@ -114,7 +115,7 @@ class DownloadAccessTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
-        cls.gui = load_gui("download_main", "L1BSR-GUI.py")
+        cls.gui = load_gui("download_main", "app.py")
 
     def setUp(self):
         self.previous_style = self.app.styleSheet()
@@ -221,7 +222,7 @@ class DownloadAccessTests(unittest.TestCase):
         self.load("scene_rgb.png"); self.process()
         with tempfile.TemporaryDirectory() as td:
             path = Path(td)/"old.zip"; path.write_bytes(b"previous download")
-            with patch.object(self.gui,"save_dialog",return_value=str(path)), patch("results_export.zipfile.ZipFile.write",side_effect=OSError("disk full")):
+            with patch.object(self.gui,"save_dialog",return_value=str(path)), patch("satsr.results_export.zipfile.ZipFile.write",side_effect=OSError("disk full")):
                 self.window.on_save_all(); wait_jobs(self.window)
             self.assertEqual(path.read_bytes(),b"previous download")
             self.assertEqual(list(Path(td).iterdir()),[path])

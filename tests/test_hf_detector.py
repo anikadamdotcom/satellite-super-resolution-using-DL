@@ -1,4 +1,5 @@
 """Offline Hugging Face inference, abstentions, CPU/GPU parity and UI state."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import os
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 import json
@@ -11,7 +12,7 @@ import torch
 from PIL import Image
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtTest import QTest
-from models.hf_landcover import HuggingFaceLandCoverEngine, EnsembleLandCoverEngine
+from satsr.models.hf_landcover import HuggingFaceLandCoverEngine, EnsembleLandCoverEngine
 from evaluate_hf_accuracy import metrics
 from gui_utils import load_gui, wait_jobs
 
@@ -97,7 +98,7 @@ class HuggingFaceGuiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
-        cls.gui = load_gui('hf_gui', 'L1BSR-GUI.py')
+        cls.gui = load_gui('hf_gui', 'app.py')
 
     def test_select_hf_detect_downloads_then_switch_and_open_another_image(self):
         window = self.gui.MainWindow(); errors = []

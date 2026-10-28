@@ -1,4 +1,5 @@
 """Real-trained model provenance, preprocessing, spectral gating and app state."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import os
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import hashlib
@@ -13,10 +14,10 @@ from PIL import Image
 import rasterio
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtTest import QTest
-from geo_io import load_any_user_image, write_single_band_geotiff
-from models.real_landcover import RealLandCoverEngine, MAPPING
-from models.unet_segmentation import LandCoverSegmenter
-from models.evaluation_metrics import segmentation_metrics
+from satsr.geo_io import load_any_user_image, write_single_band_geotiff
+from satsr.models.real_landcover import RealLandCoverEngine, MAPPING
+from satsr.models.unet_segmentation import LandCoverSegmenter
+from satsr.models.evaluation_metrics import segmentation_metrics
 from gui_utils import load_gui, wait_jobs
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -135,7 +136,7 @@ class RealDetectorGuiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app=QApplication.instance() or QApplication([])
-        cls.gui=load_gui('real_detector_gui','L1BSR-GUI.py')
+        cls.gui=load_gui('real_detector_gui','app.py')
 
     def test_default_native_detection_model_change_clears_map_keeps_enhancement_and_reopens(self):
         window=self.gui.MainWindow();errors=[]

@@ -1,3 +1,4 @@
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import importlib.util
 import os
 from pathlib import Path
@@ -9,12 +10,12 @@ import rasterio
 from rasterio.transform import Affine
 from rasterio.crs import CRS
 from PIL import Image
-from data import SatelliteDataset, synthetic_scene
-from models.rcan import L1BSRSR
-from models.unet_segmentation import LandCoverSegmenter, SatelliteSegmentationNet
-from models.evaluation_metrics import (reconstruction_metrics, compute_full_sr_evaluation,
+from satsr.data import SatelliteDataset, synthetic_scene
+from satsr.models.rcan import L1BSRSR
+from satsr.models.unet_segmentation import LandCoverSegmenter, SatelliteSegmentationNet
+from satsr.models.evaluation_metrics import (reconstruction_metrics, compute_full_sr_evaluation,
                                        segmentation_metrics, calculate_sam)
-from geo_io import (BandData, load_any_user_image, load_band_stack, pixel_area_m2,
+from satsr.geo_io import (BandData, load_any_user_image, load_band_stack, pixel_area_m2,
                     write_geotiff, write_single_band_geotiff)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -154,7 +155,7 @@ class PipelineTests(unittest.TestCase):
 class GuiTests(unittest.TestCase):
     def test_worker_pipeline_and_reset(self):
         os.environ["QT_QPA_PLATFORM"] = "offscreen"
-        spec = importlib.util.spec_from_file_location("gui", ROOT/"L1BSR-GUI.py")
+        spec = importlib.util.spec_from_file_location("gui", ROOT/"app.py")
         gui = importlib.util.module_from_spec(spec); spec.loader.exec_module(gui)
         from PyQt5.QtCore import QEventLoop, QTimer
         app = gui.QApplication.instance() or gui.QApplication([])

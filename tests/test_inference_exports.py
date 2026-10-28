@@ -1,3 +1,4 @@
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 from pathlib import Path
 import tempfile
 import unittest
@@ -9,14 +10,14 @@ import rasterio
 from rasterio.crs import CRS
 from rasterio.transform import Affine
 from PIL import Image
-from data import synthetic_scene
-from models.common import tiled_predict, read_checkpoint
-from models.rcan import L1BSRSR
-from models.unet_segmentation import LandCoverSegmenter
-from onnx_engine import ONNXModel
-from geo_io import (BandData, load_any_user_image, save_image, write_geotiff,
+from satsr.data import synthetic_scene
+from satsr.models.common import tiled_predict, read_checkpoint
+from satsr.models.rcan import L1BSRSR
+from satsr.models.unet_segmentation import LandCoverSegmenter
+from satsr.onnx_engine import ONNXModel
+from satsr.geo_io import (BandData, load_any_user_image, save_image, write_geotiff,
     write_single_band_geotiff, _atomic_write, resolve_output_path, save_jpeg_with_jgw)
-from models.evaluation_metrics import (reconstruction_metrics, calculate_psnr, calculate_ssim,
+from satsr.models.evaluation_metrics import (reconstruction_metrics, calculate_psnr, calculate_ssim,
     calculate_sam, calculate_land_cover_stats, segmentation_metrics)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +28,7 @@ class InferenceTests(unittest.TestCase):
     def setUpClass(cls):
         torch.set_num_threads(2)
         cls.sr = L1BSRSR(ROOT/"checkpoints/demo/rcan.pt","cpu",tile_size=16)
-        cls.onnx = ONNXModel(ROOT/"rcan_model.onnx",tile_size=16)
+        cls.onnx = ONNXModel(ROOT/"checkpoints/demo/rcan_model.onnx",tile_size=16)
         cls.seg = LandCoverSegmenter("cpu",ROOT/"checkpoints/demo/unet.pt",tile_size=16)
 
     def test_backend_parity_small_odd_tiny_and_multitile(self):
@@ -140,7 +141,7 @@ class ExportMetricTests(unittest.TestCase):
             self.assertEqual(list(Path(td).iterdir()),[path])
 
     def test_bundle_failure_preserves_all_previous_files(self):
-        from geo_io import _atomic_bundle
+        from satsr.geo_io import _atomic_bundle
         with tempfile.TemporaryDirectory() as td:
             paths = [Path(td)/name for name in ("image.jpg","image.jgw","image.prj")]
             for path in paths:

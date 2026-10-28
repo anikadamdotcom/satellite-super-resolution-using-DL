@@ -1,4 +1,5 @@
 """SEN2VENµS preparation, the SR-only patch dataset, the compensated loss and train.py --task sr."""
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 from pathlib import Path
 import json
 import subprocess
@@ -7,10 +8,10 @@ import tempfile
 import unittest
 import numpy as np
 import torch
-from data import SRPatchDataset
+from satsr.data import SRPatchDataset
 from prepare_sen2venus import prepare, patch_filter
 from train import compensated_l1
-from models.common import read_checkpoint
+from satsr.models.common import read_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -71,7 +72,7 @@ class Sen2VenusTests(unittest.TestCase):
                 SRPatchDataset(td, "train")
 
     def test_subpixel_alignment_estimates_and_follows_augmentation(self):
-        from models.alignment import shift_image, estimate_shift, augment_shift, aligned_l1
+        from satsr.models.alignment import shift_image, estimate_shift, augment_shift, aligned_l1
         torch.manual_seed(0)
         base = torch.nn.functional.interpolate(torch.rand(2, 4, 16, 16), size=64, mode="bicubic", align_corners=False)
         true = torch.tensor([[0.625, -1.25], [-0.5, 0.375]])
@@ -88,7 +89,7 @@ class Sen2VenusTests(unittest.TestCase):
                 torch.testing.assert_close(out[0, :, 6:-6, 6:-6], torch.from_numpy(b.copy()).permute(2, 0, 1)[:, 6:-6, 6:-6], atol=1e-5, rtol=0)
 
     def test_radiometric_match_restores_sentinel2_contrast_and_mean(self):
-        from models.alignment import radiometric_match
+        from satsr.models.alignment import radiometric_match
         torch.manual_seed(1)
         hr = 2000 + 800*torch.nn.functional.interpolate(torch.rand(3, 4, 8, 8), size=64, mode="bicubic", align_corners=False)
         lr = torch.nn.functional.avg_pool2d(hr, 2)
@@ -108,7 +109,7 @@ class Sen2VenusTests(unittest.TestCase):
         self.assertGreater(striping(stripes), .2)
 
     def test_consistent_rcan_preserves_input_at_10m(self):
-        from models.rcan import RCAN
+        from satsr.models.rcan import RCAN
         model = RCAN(n_feats=8, n_resgroups=1, n_resblocks=1, residual=True, consistent=True).eval()
         torch.nn.init.normal_(model.tail[-1].weight, std=.1)
         x = torch.rand(1, 4, 12, 12)
@@ -130,7 +131,7 @@ class Sen2VenusTests(unittest.TestCase):
             for site, seed in (("AAA", 1), ("BBB", 2), ("CCC", 3)):
                 fake_site(td, site, seed=seed, n=4)
             prepare(td, Path(td)/"npy", dict(train=["AAA"], val=["BBB"], test=["CCC"]))
-            result = subprocess.run([sys.executable, str(ROOT/"train.py"), "--task", "sr", "--data", str(Path(td)/"npy"),
+            result = subprocess.run([sys.executable, str(ROOT/"scripts"/"train.py"), "--task", "sr", "--data", str(Path(td)/"npy"),
                                      "--output", str(Path(td)/"out"), "--epochs", "1", "--batch-size", "2", "--crop", "16",
                                      "--workers", "0", "--device", "cpu", "--lr", "2e-4"],
                                     cwd=td, text=True, capture_output=True, timeout=120)

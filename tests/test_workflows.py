@@ -1,3 +1,4 @@
+import _paths  # noqa: F401  (puts src/ and scripts/ on sys.path)
 import os
 os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
 from pathlib import Path
@@ -13,7 +14,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt
 from PyQt5.QtTest import QTest
 from gui_utils import load_gui, wait_jobs
-from geo_io import load_any_user_image, output_valid_mask
+from satsr.geo_io import load_any_user_image, output_valid_mask
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT/"tests"/"fixtures"/"formats"
@@ -23,7 +24,7 @@ class MainWorkflowTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
-        cls.gui = load_gui("audit_main_gui","L1BSR-GUI.py")
+        cls.gui = load_gui("audit_main_gui","app.py")
 
     def setUp(self):
         self.window = self.gui.MainWindow(); self.window.device = torch.device("cpu")
@@ -42,7 +43,7 @@ class MainWorkflowTests(unittest.TestCase):
         self.assertFalse(self.errors,self.errors)
 
     def test_every_demo_format_load_enhance_detect_and_replace(self):
-        from geo_io import IMAGE_EXTENSIONS
+        from satsr.geo_io import IMAGE_EXTENSIONS
         for path in sorted(p for p in DEMO.iterdir() if p.suffix.lower() in IMAGE_EXTENSIONS):
             with self.subTest(file=path.name):
                 self.load(path)
@@ -162,7 +163,7 @@ class OnnxWorkflowTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
-        cls.gui = load_gui("audit_onnx_gui","L1-BSR-GUI-ONNX.py")
+        cls.gui = load_gui("audit_onnx_gui","app_onnx.py")
 
     def setUp(self):
         self.window = self.gui.MainWindow(); self.errors = []
