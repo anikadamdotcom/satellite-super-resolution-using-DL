@@ -26,7 +26,7 @@ The project also asks whether super-resolution is worth it. On held-out real dat
 - **Synthetic vs real training data.** The same network trained on synthetic data is *worse* than bicubic on real imagery. Training on real pairs turns it into a consistent, though small, improvement. Three training seeds agree within ±0.04 dB.
 - **Main score.** VENµS is offset from Sentinel-2 by fractions of a pixel and has 5–9% less contrast. The main score applies each patch's known sub-pixel shift (the same for every method), removes band offsets and puts the reference on Sentinel-2 contrast. "Raw" applies no correction.
 - **Why Run A was replaced.** The first real-data model learned VENµS's lower contrast and flattened Sentinel-2 images by 5–25%, which shows up as −1.57 dB on the reduced-scale benchmark. Run B trains on aligned, contrast-matched references and fixes this. An earlier README figure of "+0.47 dB" came from Run A and an older, more lenient scoring and is withdrawn.
-- **Per site.** The gain is uneven: +0.34 dB at KUDALIAR, +0.03 dB at BENGA.
+- **Per site.** The gain is uneven: +0.34 dB at KUDALIAR, +0.03 dB at BENGA, and about zero at the validation site ALSACE (France): 38.38 dB vs bicubic's 38.39 dB at the selected epoch. Of the three sites the model never trained on, only KUDALIAR shows a clear gain.
 
 **Does super-resolution help mapping?** The same U-Net was trained on each input type and scored against ESA WorldCover labels at 8 held-out Indian sites (3 seeds):
 
@@ -134,7 +134,7 @@ docs/                 user guide, experiment write-ups, detector notes, related 
 ## Limitations
 
 - **Small gain.** The super-resolution gain is small (about 0.1–0.3 dB), which is in line with the literature for 2x on Sentinel-2.
-- **Narrow test set.** The test covers two sites, both in India, and the gain differs a lot between them (+0.34 vs +0.03 dB).
+- **Narrow test set.** The test covers two sites, both in India, and the gain differs a lot between them (+0.34 vs +0.03 dB). On the validation site (ALSACE) the model is level with bicubic.
 - **What the gain measures.** VENµS is a different sensor, so the result measures "closer to a real 5 m image after correcting known sensor differences", not recovery of objects smaller than 10 m. The alignment and contrast correction are themselves estimates.
 - **Comparison still to run.** The mapping experiment has not been re-run with the real-trained RCAN.
 - **Derived imagery.** Enhanced images are model output, not measured imagery.

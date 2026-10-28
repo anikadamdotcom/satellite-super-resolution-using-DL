@@ -105,7 +105,7 @@ Per-class F1 (mean of 3 seeds):
 | SEN2SRLite (4x, averaged to 5 m) | −0.04 | 31% | −0.06 | −0.07 | 0.9679 | 1.88° |
 | **Run B (app)** | **+0.20** | **83%** | +0.18 | **+0.11** | 0.9703 | 1.80° |
 
-Per site (harmonised gain): Run B +0.34 dB at KUDALIAR, +0.03 dB at BENGA. Seeds 42, 1 and 2 give +0.19 to +0.21 dB; seed 42 was picked by validation loss alone.
+Per site (harmonised gain): Run B +0.34 dB at KUDALIAR, +0.03 dB at BENGA. On the validation site ALSACE it is level with bicubic: 38.38 vs 38.39 dB at the selected epoch 5, and within −0.04 to +0.06 dB across all 11 epochs (`checkpoints/demo/rcan_training_report.json`). Seeds 42, 1 and 2 give +0.19 to +0.21 dB; seed 42 was picked by validation loss alone.
 
 **Training (Run B).** 17 training sites (41,704 patches), validation ALSACE. The loss is L1 after applying the known shift, against the contrast-matched reference, with band offsets removed, plus an RMSE term keeping the output (downsampled to 10 m) equal to the input. Learning rate 1e-4, early stopping; best epoch 5. Pilots that failed on validation: a strict 2×2-mean output layer (below bicubic), no brightness anchor (drifted, −2.4 dB raw), an L1 anchor without contrast matching (contrast stayed ~8% low).
 
@@ -114,7 +114,8 @@ Per site (harmonised gain): Run B +0.34 dB at KUDALIAR, +0.03 dB at BENGA. Seeds
 **Limits:**
 - The gain is small (0.1–0.3 dB), as expected for 2x on Sentinel-2.
 - VENµS is a different sensor. This measures "closer to a real 5 m image after correcting known sensor differences", not recovery of objects under 10 m. The shift and contrast corrections are estimates.
-- 2 test sites, both Indian, and the gain differs between them.
+- 2 test sites, both Indian, and the gain differs between them. Across the three sites never used for training, only KUDALIAR shows a clear gain (ALSACE ≈ 0, BENGA +0.03 dB), so most of the headline +0.20 dB comes from one site.
+- The main (harmonised) score uses the same contrast-matched reference Run B was trained on, which favours Run B over Run A; on the raw score they are nearly tied (+0.11 vs +0.10 dB). The independent evidence that Run B is better is the reduced-scale test and the consistency check, and that benchmark helped diagnose Run A, so it is not fully held out for Run B.
 
 ## Conclusions
 
