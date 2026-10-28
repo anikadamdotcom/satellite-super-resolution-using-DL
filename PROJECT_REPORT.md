@@ -51,17 +51,23 @@ U-Net learns from ground-truth HR features. For full pipeline evaluation, it rec
 
 ## Real-data RCAN retraining (SEN2VENµS)
 
-The RCAN used by the app was retrained on real cross-sensor pairs: Sentinel-2 10 m patches and same-day VENµS 5 m references from SEN2VENµS. There are 7 training sites (11,745 patches) and 1 validation site (ALSACE). Two Indian sites, BENGA and KUDALIAR, are held out for testing. The architecture is unchanged. Because the two sensors are misregistered by about one 5 m pixel, training uses an L1 loss that removes the best small shift and per-band mean offset, plus a weak consistency term to the Sentinel-2 input. The checkpoint was selected on validation (epoch 6 of 80).
+The RCAN used by the app was retrained on real cross-sensor pairs: Sentinel-2 10 m patches and same-day VENµS 5 m references from SEN2VENµS. The data split is 17 training sites (41,704 patches), 1 validation site (ALSACE) and 2 held-out Indian test sites (BENGA, KUDALIAR; 13,039 patches). The architecture is unchanged.
 
-| Held-out Indian sites (2,000 patches) | Bicubic | Synthetic RCAN | SEN2VENµS RCAN |
-| --- | ---: | ---: | ---: |
-| PSNR, raw | 39.08 dB | 38.83 dB | 39.17 dB |
-| PSNR, shift/bias compensated | 40.09 dB | 39.80 dB | 40.55 dB |
-| SSIM, compensated | 0.9664 | 0.9630 | 0.9697 |
-| SAM, compensated | 1.974° | 2.062° | 1.826° |
-| Patches better than bicubic (compensated) | n/a | 6 / 2000 | 1638 / 2000 |
+A first run (Run A) scored well against VENµS but flattened Sentinel-2 contrast by 5-25% on Indian scenes. The pairs are misregistered by fractions of a pixel, and VENµS has 5-9% less contrast than Sentinel-2 at every scale, so a model fitted to raw VENµS learns blur and contrast loss. The final model (Run B) fixes both:
+- each patch's sub-pixel shift (1/8 px) is estimated and applied inside the loss;
+- each reference is rescaled per band to Sentinel-2's mean and contrast at 40 m;
+- an RMSE consistency term keeps brightness tied to the input.
 
-The synthetic model's 5.66 dB gain below did not transfer to real imagery. On real data it falls below bicubic. The real-trained model gives a small, consistent gain (+0.47 dB compensated, +0.09 dB raw). This is in line with published 2x results and does not mean sub-10 m objects are recovered. Details and commands are in README.md and `checkpoints/demo/rcan_training_report.json`.
+Of three seeds, the one with the lowest validation loss was selected.
+
+| Held-out Indian sites, 13,039 patches | Bicubic | Synthetic RCAN | Run A | ESA SEN2SRLite | Run B (app) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| PSNR gain, harmonised (main) | 0 | −0.26 dB | +0.12 dB | −0.04 dB | **+0.20 dB** |
+| Patches better than bicubic | n/a | 2% | 69% | 31% | **83%** |
+| PSNR gain, raw | 0 | −0.25 dB | +0.10 dB | −0.07 dB | **+0.11 dB** |
+| Indian reduced-scale benchmark (42 scenes) | 0 | −0.63 dB | −1.57 dB | −0.12 dB | **+0.20 dB (38/42)** |
+
+The synthetic model's 5.66 dB gain below did not transfer to real imagery. Run B gives a small, consistent gain (seed spread ±0.04 dB on the test sites) and preserves Sentinel-2 radiometry. It also removes the striping seen in the Compare view. The gain is in line with published 2x results and does not mean sub-10 m objects are recovered. It varies by site (+0.34 dB KUDALIAR, +0.03 dB BENGA). Details, commands and the full tables are in README.md, `results/` and `checkpoints/demo/rcan_training_report.json`.
 
 ## Measured held-out synthetic results (original experiment; RCAN kept as `rcan_synthetic.pt`)
 
@@ -101,7 +107,7 @@ The main application defaults to CPU and exposes a **Run without GPU (CPU)** tog
 
 ## Limitations and next work
 
-Real satellite validation requires independent geographic scenes, co-registered four-band HR references and five-class labels. Product-specific radiometric scaling and label remapping must be completed before ingestion. Models trained on this synthetic generator should not be used for operational mapping. RCAN has since been retrained on real SEN2VENµS pairs (above); a larger training-site set, a larger RCAN and comparison with ESA SEN2SR on the same test are the next steps. Real data should assess class imbalance, boundaries, small objects, domain shift, confidence calibration and tile-context effects. SWIR features, segmentation training on reconstructed inputs, vectorization and geographically balanced evaluation are useful future extensions.
+Real satellite validation requires independent geographic scenes, co-registered four-band HR references and five-class labels. Product-specific radiometric scaling and label remapping must be completed before ingestion. Models trained on this synthetic generator should not be used for operational mapping. RCAN has since been retrained on real SEN2VENµS pairs (above). A larger RCAN (checking CPU speed), more Indian test sites and a mapping experiment on Run B outputs are the next steps. Real data should assess class imbalance, boundaries, small objects, domain shift, confidence calibration and tile-context effects. SWIR features, segmentation training on reconstructed inputs, vectorization and geographically balanced evaluation are useful future extensions.
 
 ## Reproduction
 

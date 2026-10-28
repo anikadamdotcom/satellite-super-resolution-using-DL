@@ -1,0 +1,362 @@
+{
+  "split": "test",
+  "patches": 13039,
+  "provenance": {
+    "bicubic": "PyTorch bicubic interpolation",
+    "old_synthetic": "synthetic procedural demo (not real satellite validation) [checkpoints/demo/rcan_synthetic.pt]",
+    "runA": "SEN2VEN\u00b5S real Sentinel-2 10 m / VEN\u00b5S 5 m pairs (train sites: ATTO, ESTUAMAR, JAM2018, K34-AMAZ, LERIDA-1, MAD-AMBO, SUDOUE-4; val: ALSACE; test: BENGA, KUDALIAR) [checkpoints/demo/rcan.pt]",
+    "runB": "SEN2VEN\u00b5S real Sentinel-2 10 m / VEN\u00b5S 5 m pairs (train sites: ANJI, ATTO, BAMBENW2, ES-LTERA, ESGISB-1, ESTUAMAR, FGMANAUS, FR-LQ1, JAM2018, K34-AMAZ, LERIDA-1, MAD-AMBO, NARYN, SO2, SUDOUE-4, SUDOUE-5, SUDOUE-6; val: ALSACE; test: BENGA, KUDALIAR) [checkpoints/real/runB_s42/rcan.pt]",
+    "sen2sr": "ESA OpenSR SEN2SRLite NonReference_RGBN_x4 (SPAN, 472k parameters), trained on real Sentinel-2 / NAIP pairs (SEN2NAIPv2); MIT licence"
+  },
+  "overall": {
+    "bicubic": {
+      "raw": {
+        "psnr_db": 39.0683,
+        "ssim": 0.9589,
+        "sam_degrees": 2.4492
+      },
+      "compensated": {
+        "psnr_db": 40.2804,
+        "ssim": 0.968,
+        "sam_degrees": 1.9319
+      },
+      "harmonised": {
+        "psnr_db": 40.5425,
+        "ssim": 0.9684,
+        "sam_degrees": 1.8958
+      },
+      "detail_std_vs_nearest": 59.74
+    },
+    "old_synthetic": {
+      "raw": {
+        "psnr_db": 38.8204,
+        "ssim": 0.9556,
+        "sam_degrees": 2.5157,
+        "psnr_gain_vs_bicubic_db": -0.248,
+        "patches_better_than_bicubic": "136/13039"
+      },
+      "compensated": {
+        "psnr_db": 40.0326,
+        "ssim": 0.9652,
+        "sam_degrees": 2.0073,
+        "psnr_gain_vs_bicubic_db": -0.248,
+        "patches_better_than_bicubic": "203/13039"
+      },
+      "harmonised": {
+        "psnr_db": 40.2876,
+        "ssim": 0.9659,
+        "sam_degrees": 1.9654,
+        "psnr_gain_vs_bicubic_db": -0.255,
+        "patches_better_than_bicubic": "232/13039"
+      },
+      "detail_std_vs_nearest": 66.92
+    },
+    "runA": {
+      "raw": {
+        "psnr_db": 39.1704,
+        "ssim": 0.9629,
+        "sam_degrees": 2.3393,
+        "psnr_gain_vs_bicubic_db": 0.102,
+        "patches_better_than_bicubic": "8655/13039"
+      },
+      "compensated": {
+        "psnr_db": 40.7869,
+        "ssim": 0.9712,
+        "sam_degrees": 1.7843,
+        "psnr_gain_vs_bicubic_db": 0.507,
+        "patches_better_than_bicubic": "10676/13039"
+      },
+      "harmonised": {
+        "psnr_db": 40.6611,
+        "ssim": 0.9706,
+        "sam_degrees": 1.779,
+        "psnr_gain_vs_bicubic_db": 0.119,
+        "patches_better_than_bicubic": "8950/13039"
+      },
+      "detail_std_vs_nearest": 63.8
+    },
+    "runB": {
+      "raw": {
+        "psnr_db": 39.1821,
+        "ssim": 0.9608,
+        "sam_degrees": 2.3697,
+        "psnr_gain_vs_bicubic_db": 0.114,
+        "patches_better_than_bicubic": "9881/13039"
+      },
+      "compensated": {
+        "psnr_db": 40.4608,
+        "ssim": 0.9696,
+        "sam_degrees": 1.8459,
+        "psnr_gain_vs_bicubic_db": 0.18,
+        "patches_better_than_bicubic": "10533/13039"
+      },
+      "harmonised": {
+        "psnr_db": 40.7436,
+        "ssim": 0.9703,
+        "sam_degrees": 1.804,
+        "psnr_gain_vs_bicubic_db": 0.201,
+        "patches_better_than_bicubic": "10877/13039"
+      },
+      "detail_std_vs_nearest": 59.83
+    },
+    "sen2sr": {
+      "raw": {
+        "psnr_db": 38.9985,
+        "ssim": 0.9578,
+        "sam_degrees": 2.4325,
+        "psnr_gain_vs_bicubic_db": -0.07,
+        "patches_better_than_bicubic": "2983/13039"
+      },
+      "compensated": {
+        "psnr_db": 40.2255,
+        "ssim": 0.9671,
+        "sam_degrees": 1.9204,
+        "psnr_gain_vs_bicubic_db": -0.055,
+        "patches_better_than_bicubic": "3636/13039"
+      },
+      "harmonised": {
+        "psnr_db": 40.5051,
+        "ssim": 0.9679,
+        "sam_degrees": 1.8745,
+        "psnr_gain_vs_bicubic_db": -0.037,
+        "patches_better_than_bicubic": "4017/13039"
+      },
+      "detail_std_vs_nearest": 57.39
+    }
+  },
+  "per_site": {
+    "BENGA": {
+      "bicubic": {
+        "raw": {
+          "psnr_db": 37.2477,
+          "ssim": 0.9435,
+          "sam_degrees": 3.1058
+        },
+        "compensated": {
+          "psnr_db": 38.4709,
+          "ssim": 0.9573,
+          "sam_degrees": 2.4706
+        },
+        "harmonised": {
+          "psnr_db": 38.6455,
+          "ssim": 0.9576,
+          "sam_degrees": 2.4347
+        },
+        "detail_std_vs_nearest": 57.23
+      },
+      "old_synthetic": {
+        "raw": {
+          "psnr_db": 37.0746,
+          "ssim": 0.9402,
+          "sam_degrees": 3.1485,
+          "psnr_gain_vs_bicubic_db": -0.173,
+          "patches_better_than_bicubic": "81/5848"
+        },
+        "compensated": {
+          "psnr_db": 38.2827,
+          "ssim": 0.9542,
+          "sam_degrees": 2.5361,
+          "psnr_gain_vs_bicubic_db": -0.188,
+          "patches_better_than_bicubic": "1/5848"
+        },
+        "harmonised": {
+          "psnr_db": 38.4586,
+          "ssim": 0.955,
+          "sam_degrees": 2.4866,
+          "psnr_gain_vs_bicubic_db": -0.187,
+          "patches_better_than_bicubic": "1/5848"
+        },
+        "detail_std_vs_nearest": 62.97
+      },
+      "runA": {
+        "raw": {
+          "psnr_db": 37.5957,
+          "ssim": 0.9502,
+          "sam_degrees": 2.8886,
+          "psnr_gain_vs_bicubic_db": 0.348,
+          "patches_better_than_bicubic": "4685/5848"
+        },
+        "compensated": {
+          "psnr_db": 38.9589,
+          "ssim": 0.9621,
+          "sam_degrees": 2.2253,
+          "psnr_gain_vs_bicubic_db": 0.488,
+          "patches_better_than_bicubic": "5235/5848"
+        },
+        "harmonised": {
+          "psnr_db": 38.9495,
+          "ssim": 0.9619,
+          "sam_degrees": 2.1989,
+          "psnr_gain_vs_bicubic_db": 0.304,
+          "patches_better_than_bicubic": "4850/5848"
+        },
+        "detail_std_vs_nearest": 59.62
+      },
+      "runB": {
+        "raw": {
+          "psnr_db": 37.2552,
+          "ssim": 0.9454,
+          "sam_degrees": 3.0166,
+          "psnr_gain_vs_bicubic_db": 0.007,
+          "patches_better_than_bicubic": "3159/5848"
+        },
+        "compensated": {
+          "psnr_db": 38.4922,
+          "ssim": 0.9584,
+          "sam_degrees": 2.3938,
+          "psnr_gain_vs_bicubic_db": 0.021,
+          "patches_better_than_bicubic": "3461/5848"
+        },
+        "harmonised": {
+          "psnr_db": 38.6756,
+          "ssim": 0.9592,
+          "sam_degrees": 2.3418,
+          "psnr_gain_vs_bicubic_db": 0.03,
+          "patches_better_than_bicubic": "3738/5848"
+        },
+        "detail_std_vs_nearest": 57.36
+      },
+      "sen2sr": {
+        "raw": {
+          "psnr_db": 37.1513,
+          "ssim": 0.9416,
+          "sam_degrees": 3.0687,
+          "psnr_gain_vs_bicubic_db": -0.096,
+          "patches_better_than_bicubic": "598/5848"
+        },
+        "compensated": {
+          "psnr_db": 38.3614,
+          "ssim": 0.9555,
+          "sam_degrees": 2.4532,
+          "psnr_gain_vs_bicubic_db": -0.109,
+          "patches_better_than_bicubic": "901/5848"
+        },
+        "harmonised": {
+          "psnr_db": 38.5483,
+          "ssim": 0.9564,
+          "sam_degrees": 2.397,
+          "psnr_gain_vs_bicubic_db": -0.097,
+          "patches_better_than_bicubic": "1160/5848"
+        },
+        "detail_std_vs_nearest": 55.57
+      }
+    },
+    "KUDALIAR": {
+      "bicubic": {
+        "raw": {
+          "psnr_db": 40.5489,
+          "ssim": 0.9715,
+          "sam_degrees": 1.9153
+        },
+        "compensated": {
+          "psnr_db": 41.752,
+          "ssim": 0.9767,
+          "sam_degrees": 1.4938
+        },
+        "harmonised": {
+          "psnr_db": 42.0853,
+          "ssim": 0.9771,
+          "sam_degrees": 1.4576
+        },
+        "detail_std_vs_nearest": 61.78
+      },
+      "old_synthetic": {
+        "raw": {
+          "psnr_db": 40.2402,
+          "ssim": 0.9682,
+          "sam_degrees": 2.001,
+          "psnr_gain_vs_bicubic_db": -0.309,
+          "patches_better_than_bicubic": "55/7191"
+        },
+        "compensated": {
+          "psnr_db": 41.4557,
+          "ssim": 0.9741,
+          "sam_degrees": 1.5773,
+          "psnr_gain_vs_bicubic_db": -0.296,
+          "patches_better_than_bicubic": "202/7191"
+        },
+        "harmonised": {
+          "psnr_db": 41.775,
+          "ssim": 0.9747,
+          "sam_degrees": 1.5416,
+          "psnr_gain_vs_bicubic_db": -0.31,
+          "patches_better_than_bicubic": "231/7191"
+        },
+        "detail_std_vs_nearest": 70.13
+      },
+      "runA": {
+        "raw": {
+          "psnr_db": 40.451,
+          "ssim": 0.9733,
+          "sam_degrees": 1.8925,
+          "psnr_gain_vs_bicubic_db": -0.098,
+          "patches_better_than_bicubic": "3970/7191"
+        },
+        "compensated": {
+          "psnr_db": 42.2735,
+          "ssim": 0.9787,
+          "sam_degrees": 1.4256,
+          "psnr_gain_vs_bicubic_db": 0.522,
+          "patches_better_than_bicubic": "5441/7191"
+        },
+        "harmonised": {
+          "psnr_db": 42.053,
+          "ssim": 0.9777,
+          "sam_degrees": 1.4375,
+          "psnr_gain_vs_bicubic_db": -0.032,
+          "patches_better_than_bicubic": "4100/7191"
+        },
+        "detail_std_vs_nearest": 67.19
+      },
+      "runB": {
+        "raw": {
+          "psnr_db": 40.7491,
+          "ssim": 0.9732,
+          "sam_degrees": 1.8435,
+          "psnr_gain_vs_bicubic_db": 0.2,
+          "patches_better_than_bicubic": "6722/7191"
+        },
+        "compensated": {
+          "psnr_db": 42.0617,
+          "ssim": 0.9787,
+          "sam_degrees": 1.4004,
+          "psnr_gain_vs_bicubic_db": 0.31,
+          "patches_better_than_bicubic": "7072/7191"
+        },
+        "harmonised": {
+          "psnr_db": 42.4253,
+          "ssim": 0.9793,
+          "sam_degrees": 1.3666,
+          "psnr_gain_vs_bicubic_db": 0.34,
+          "patches_better_than_bicubic": "7139/7191"
+        },
+        "detail_std_vs_nearest": 61.84
+      },
+      "sen2sr": {
+        "raw": {
+          "psnr_db": 40.5008,
+          "ssim": 0.9709,
+          "sam_degrees": 1.9151,
+          "psnr_gain_vs_bicubic_db": -0.048,
+          "patches_better_than_bicubic": "2385/7191"
+        },
+        "compensated": {
+          "psnr_db": 41.7415,
+          "ssim": 0.9764,
+          "sam_degrees": 1.4872,
+          "psnr_gain_vs_bicubic_db": -0.01,
+          "patches_better_than_bicubic": "2735/7191"
+        },
+        "harmonised": {
+          "psnr_db": 42.0965,
+          "ssim": 0.9772,
+          "sam_degrees": 1.4495,
+          "psnr_gain_vs_bicubic_db": 0.011,
+          "patches_better_than_bicubic": "2857/7191"
+        },
+        "detail_std_vs_nearest": 58.87
+      }
+    }
+  },
+  "protocol": "Cross-sensor test: Sentinel-2 10 m -> VEN\u00b5S 5 m on held-out SEN2VEN\u00b5S sites.\n\nEvery method upsamples the real 10 m Sentinel-2 patch 2x and is scored against the real\nVEN\u00b5S 5 m patch acquired the same day. Two scorings are reported:\n\n- raw: direct comparison.\n- compensated (\"aligned\"): the prediction is moved by the patch's sub-pixel\n  Sentinel-2/VEN\u00b5S shift (estimated once, from bicubic vs. VEN\u00b5S, in prepare_sen2venus.py)\n  and each band's mean offset is removed before scoring; 4 px border excluded. This takes\n  out the known misregistration and band offsets without searching per method, so a blurry\n  method cannot win by matching the misregistration. Every method gets the same treatment.\n- harmonised: as compensated, but against the VEN\u00b5S reference rescaled per band to\n  Sentinel-2 contrast and mean at 40 m (VEN\u00b5S has ~5-9% less contrast). This scores\n  spatial detail on Sentinel-2's own radiometry, which is what the app needs."
+}

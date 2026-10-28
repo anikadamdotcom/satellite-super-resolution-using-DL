@@ -1,0 +1,1945 @@
+{
+  "description": "Real Sentinel-2 has no same-day 5 m reference, so two standard checks are used:",
+  "methods": {
+    "bicubic": "PyTorch bicubic interpolation (antialias off)",
+    "rcan": "SEN2VEN\u00b5S real Sentinel-2 10 m / VEN\u00b5S 5 m pairs (train sites: ATTO, ESTUAMAR, JAM2018, K34-AMAZ, LERIDA-1, MAD-AMBO, SUDOUE-4; val: ALSACE; test: BENGA, KUDALIAR)",
+    "sen2sr": "ESA OpenSR SEN2SRLite NonReference_RGBN_x4 (SPAN, 472k parameters), trained on real Sentinel-2 / NAIP pairs (SEN2NAIPv2); MIT licence"
+  },
+  "rcan_checkpoint": "checkpoints/demo/rcan.pt",
+  "data_range": 10000,
+  "scenes": 42,
+  "summary": {
+    "reduced_scale": {
+      "bicubic": {
+        "psnr_db": 39.3352,
+        "ssim": 0.9366,
+        "sam_degrees": 1.7434,
+        "psnr_gain_vs_bicubic_db": 0.0,
+        "scenes_better_than_bicubic": 0
+      },
+      "rcan": {
+        "psnr_db": 37.7626,
+        "ssim": 0.9285,
+        "sam_degrees": 2.2509,
+        "psnr_gain_vs_bicubic_db": -1.573,
+        "scenes_better_than_bicubic": 0
+      },
+      "sen2sr": {
+        "psnr_db": 39.2205,
+        "ssim": 0.9412,
+        "sam_degrees": 1.7756,
+        "psnr_gain_vs_bicubic_db": -0.115,
+        "scenes_better_than_bicubic": 15
+      }
+    },
+    "native": {
+      "bicubic": {
+        "consistency_psnr_db": 53.647,
+        "consistency_sam_degrees": 0.363,
+        "edge_energy_vs_bicubic": 1.0
+      },
+      "rcan": {
+        "consistency_psnr_db": 43.87,
+        "consistency_sam_degrees": 1.3428,
+        "edge_energy_vs_bicubic": 0.861
+      },
+      "sen2sr": {
+        "consistency_psnr_db": 54.519,
+        "consistency_sam_degrees": 0.3587,
+        "edge_energy_vs_bicubic": 2.391
+      }
+    }
+  },
+  "per_scene": {
+    "ahmedabad": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 31.95,
+          "ssim": 0.8493,
+          "sam_degrees": 3.882
+        },
+        "rcan": {
+          "psnr_db": 31.57,
+          "ssim": 0.832,
+          "sam_degrees": 4.583
+        },
+        "sen2sr": {
+          "psnr_db": 31.63,
+          "ssim": 0.865,
+          "sam_degrees": 4.198
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 46.15,
+            "ssim": 0.9949,
+            "sam_degrees": 0.89
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 39.74,
+            "ssim": 0.9771,
+            "sam_degrees": 2.62
+          },
+          "edge_energy_vs_bicubic": 0.836
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 46.28,
+            "ssim": 0.9953,
+            "sam_degrees": 1.023
+          },
+          "edge_energy_vs_bicubic": 2.722
+        }
+      }
+    },
+    "bathinda": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 36.45,
+          "ssim": 0.8943,
+          "sam_degrees": 2.665
+        },
+        "rcan": {
+          "psnr_db": 36.17,
+          "ssim": 0.8888,
+          "sam_degrees": 2.925
+        },
+        "sen2sr": {
+          "psnr_db": 36.17,
+          "ssim": 0.9001,
+          "sam_degrees": 2.745
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 50.62,
+            "ssim": 0.9963,
+            "sam_degrees": 0.587
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 45.09,
+            "ssim": 0.9881,
+            "sam_degrees": 1.493
+          },
+          "edge_energy_vs_bicubic": 0.9
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 51.51,
+            "ssim": 0.997,
+            "sam_degrees": 0.6
+          },
+          "edge_energy_vs_bicubic": 2.395
+        }
+      }
+    },
+    "bengaluru": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 33.78,
+          "ssim": 0.8819,
+          "sam_degrees": 3.244
+        },
+        "rcan": {
+          "psnr_db": 33.31,
+          "ssim": 0.8693,
+          "sam_degrees": 3.569
+        },
+        "sen2sr": {
+          "psnr_db": 33.6,
+          "ssim": 0.8933,
+          "sam_degrees": 3.367
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 48.3,
+            "ssim": 0.9962,
+            "sam_degrees": 0.668
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 41.2,
+            "ssim": 0.9831,
+            "sam_degrees": 1.7
+          },
+          "edge_energy_vs_bicubic": 0.83
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 48.87,
+            "ssim": 0.9968,
+            "sam_degrees": 0.681
+          },
+          "edge_energy_vs_bicubic": 2.491
+        }
+      }
+    },
+    "bhopal": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.14,
+          "ssim": 0.9113,
+          "sam_degrees": 2.37
+        },
+        "rcan": {
+          "psnr_db": 36.78,
+          "ssim": 0.9054,
+          "sam_degrees": 2.69
+        },
+        "sen2sr": {
+          "psnr_db": 37.01,
+          "ssim": 0.9173,
+          "sam_degrees": 2.445
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.43,
+            "ssim": 0.9969,
+            "sam_degrees": 0.52
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 45.24,
+            "ssim": 0.9891,
+            "sam_degrees": 1.414
+          },
+          "edge_energy_vs_bicubic": 0.876
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.52,
+            "ssim": 0.9977,
+            "sam_degrees": 0.505
+          },
+          "edge_energy_vs_bicubic": 2.345
+        }
+      }
+    },
+    "bhubaneswar": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 38.97,
+          "ssim": 0.9374,
+          "sam_degrees": 1.318
+        },
+        "rcan": {
+          "psnr_db": 38.18,
+          "ssim": 0.9308,
+          "sam_degrees": 1.554
+        },
+        "sen2sr": {
+          "psnr_db": 38.93,
+          "ssim": 0.9413,
+          "sam_degrees": 1.33
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 53.43,
+            "ssim": 0.9979,
+            "sam_degrees": 0.263
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 44.7,
+            "ssim": 0.9904,
+            "sam_degrees": 0.884
+          },
+          "edge_energy_vs_bicubic": 0.828
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 54.75,
+            "ssim": 0.9984,
+            "sam_degrees": 0.235
+          },
+          "edge_energy_vs_bicubic": 2.185
+        }
+      }
+    },
+    "chennai": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 34.93,
+          "ssim": 0.8951,
+          "sam_degrees": 1.751
+        },
+        "rcan": {
+          "psnr_db": 34.23,
+          "ssim": 0.8836,
+          "sam_degrees": 2.118
+        },
+        "sen2sr": {
+          "psnr_db": 34.91,
+          "ssim": 0.9048,
+          "sam_degrees": 1.788
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 49.36,
+            "ssim": 0.9965,
+            "sam_degrees": 0.364
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 41.19,
+            "ssim": 0.9845,
+            "sam_degrees": 1.293
+          },
+          "edge_energy_vs_bicubic": 0.827
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 50.07,
+            "ssim": 0.9971,
+            "sam_degrees": 0.344
+          },
+          "edge_energy_vs_bicubic": 2.37
+        }
+      }
+    },
+    "chilika": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 50.17,
+          "ssim": 0.9953,
+          "sam_degrees": 0.41
+        },
+        "rcan": {
+          "psnr_db": 39.87,
+          "ssim": 0.9903,
+          "sam_degrees": 3.073
+        },
+        "sen2sr": {
+          "psnr_db": 50.36,
+          "ssim": 0.9954,
+          "sam_degrees": 0.429
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 64.99,
+            "ssim": 0.9998,
+            "sam_degrees": 0.088
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 40.28,
+            "ssim": 0.9954,
+            "sam_degrees": 3.029
+          },
+          "edge_energy_vs_bicubic": 0.982
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 66.55,
+            "ssim": 0.9999,
+            "sam_degrees": 0.083
+          },
+          "edge_energy_vs_bicubic": 1.812
+        }
+      }
+    },
+    "coimbatore": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 36.56,
+          "ssim": 0.9077,
+          "sam_degrees": 2.282
+        },
+        "rcan": {
+          "psnr_db": 36.16,
+          "ssim": 0.8996,
+          "sam_degrees": 2.508
+        },
+        "sen2sr": {
+          "psnr_db": 36.51,
+          "ssim": 0.9159,
+          "sam_degrees": 2.331
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.07,
+            "ssim": 0.997,
+            "sam_degrees": 0.457
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 44.48,
+            "ssim": 0.9884,
+            "sam_degrees": 1.215
+          },
+          "edge_energy_vs_bicubic": 0.847
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.04,
+            "ssim": 0.9976,
+            "sam_degrees": 0.421
+          },
+          "edge_energy_vs_bicubic": 2.345
+        }
+      }
+    },
+    "dehradun": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.75,
+          "ssim": 0.9152,
+          "sam_degrees": 2.338
+        },
+        "rcan": {
+          "psnr_db": 37.37,
+          "ssim": 0.9087,
+          "sam_degrees": 2.635
+        },
+        "sen2sr": {
+          "psnr_db": 37.56,
+          "ssim": 0.9207,
+          "sam_degrees": 2.389
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.92,
+            "ssim": 0.997,
+            "sam_degrees": 0.491
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 45.46,
+            "ssim": 0.9887,
+            "sam_degrees": 1.412
+          },
+          "edge_energy_vs_bicubic": 0.869
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.74,
+            "ssim": 0.9976,
+            "sam_degrees": 0.483
+          },
+          "edge_energy_vs_bicubic": 2.431
+        }
+      }
+    },
+    "guntur": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.15,
+          "ssim": 0.9072,
+          "sam_degrees": 1.399
+        },
+        "rcan": {
+          "psnr_db": 36.1,
+          "ssim": 0.897,
+          "sam_degrees": 1.692
+        },
+        "sen2sr": {
+          "psnr_db": 36.95,
+          "ssim": 0.9128,
+          "sam_degrees": 1.43
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.44,
+            "ssim": 0.9968,
+            "sam_degrees": 0.288
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 41.7,
+            "ssim": 0.9852,
+            "sam_degrees": 1.073
+          },
+          "edge_energy_vs_bicubic": 0.83
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.34,
+            "ssim": 0.9975,
+            "sam_degrees": 0.273
+          },
+          "edge_energy_vs_bicubic": 2.314
+        }
+      }
+    },
+    "guwahati": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 39.52,
+          "ssim": 0.9434,
+          "sam_degrees": 2.219
+        },
+        "rcan": {
+          "psnr_db": 38.98,
+          "ssim": 0.9391,
+          "sam_degrees": 2.363
+        },
+        "sen2sr": {
+          "psnr_db": 39.45,
+          "ssim": 0.9466,
+          "sam_degrees": 2.238
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 53.72,
+            "ssim": 0.998,
+            "sam_degrees": 0.45
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 46.77,
+            "ssim": 0.9926,
+            "sam_degrees": 1.022
+          },
+          "edge_energy_vs_bicubic": 0.878
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 54.87,
+            "ssim": 0.9984,
+            "sam_degrees": 0.412
+          },
+          "edge_energy_vs_bicubic": 2.31
+        }
+      }
+    },
+    "hirakud": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 45.99,
+          "ssim": 0.9866,
+          "sam_degrees": 1.054
+        },
+        "rcan": {
+          "psnr_db": 42.63,
+          "ssim": 0.9821,
+          "sam_degrees": 1.314
+        },
+        "sen2sr": {
+          "psnr_db": 46.19,
+          "ssim": 0.9875,
+          "sam_degrees": 1.055
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 60.65,
+            "ssim": 0.9995,
+            "sam_degrees": 0.227
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 45.13,
+            "ssim": 0.9946,
+            "sam_degrees": 0.799
+          },
+          "edge_energy_vs_bicubic": 0.844
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 62.04,
+            "ssim": 0.9996,
+            "sam_degrees": 0.227
+          },
+          "edge_energy_vs_bicubic": 1.877
+        }
+      }
+    },
+    "hyderabad": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 35.25,
+          "ssim": 0.884,
+          "sam_degrees": 2.783
+        },
+        "rcan": {
+          "psnr_db": 34.83,
+          "ssim": 0.8738,
+          "sam_degrees": 3.12
+        },
+        "sen2sr": {
+          "psnr_db": 35.06,
+          "ssim": 0.8932,
+          "sam_degrees": 2.884
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 49.61,
+            "ssim": 0.9961,
+            "sam_degrees": 0.6
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 42.86,
+            "ssim": 0.9842,
+            "sam_degrees": 1.667
+          },
+          "edge_energy_vs_bicubic": 0.85
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 50.64,
+            "ssim": 0.997,
+            "sam_degrees": 0.566
+          },
+          "edge_energy_vs_bicubic": 2.329
+        }
+      }
+    },
+    "indore_rural": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 38.76,
+          "ssim": 0.9466,
+          "sam_degrees": 1.917
+        },
+        "rcan": {
+          "psnr_db": 38.06,
+          "ssim": 0.9405,
+          "sam_degrees": 2.195
+        },
+        "sen2sr": {
+          "psnr_db": 38.69,
+          "ssim": 0.95,
+          "sam_degrees": 1.951
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 53.22,
+            "ssim": 0.9982,
+            "sam_degrees": 0.403
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 45.79,
+            "ssim": 0.9924,
+            "sam_degrees": 1.111
+          },
+          "edge_energy_vs_bicubic": 0.846
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 53.92,
+            "ssim": 0.9985,
+            "sam_degrees": 0.406
+          },
+          "edge_energy_vs_bicubic": 2.33
+        }
+      }
+    },
+    "jaipur": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 36.41,
+          "ssim": 0.9028,
+          "sam_degrees": 2.357
+        },
+        "rcan": {
+          "psnr_db": 36.05,
+          "ssim": 0.8959,
+          "sam_degrees": 2.604
+        },
+        "sen2sr": {
+          "psnr_db": 36.36,
+          "ssim": 0.9108,
+          "sam_degrees": 2.415
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 50.8,
+            "ssim": 0.9967,
+            "sam_degrees": 0.5
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 44.33,
+            "ssim": 0.9878,
+            "sam_degrees": 1.315
+          },
+          "edge_energy_vs_bicubic": 0.861
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 51.92,
+            "ssim": 0.9975,
+            "sam_degrees": 0.462
+          },
+          "edge_energy_vs_bicubic": 2.319
+        }
+      }
+    },
+    "jaisalmer": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 34.87,
+          "ssim": 0.8989,
+          "sam_degrees": 1.344
+        },
+        "rcan": {
+          "psnr_db": 33.56,
+          "ssim": 0.888,
+          "sam_degrees": 1.673
+        },
+        "sen2sr": {
+          "psnr_db": 34.58,
+          "ssim": 0.9059,
+          "sam_degrees": 1.38
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 49.01,
+            "ssim": 0.9965,
+            "sam_degrees": 0.291
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 38.51,
+            "ssim": 0.9853,
+            "sam_degrees": 1.089
+          },
+          "edge_energy_vs_bicubic": 0.861
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 49.21,
+            "ssim": 0.9968,
+            "sam_degrees": 0.297
+          },
+          "edge_energy_vs_bicubic": 2.486
+        }
+      }
+    },
+    "kanha": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 42.15,
+          "ssim": 0.9633,
+          "sam_degrees": 0.961
+        },
+        "rcan": {
+          "psnr_db": 41.41,
+          "ssim": 0.9604,
+          "sam_degrees": 1.163
+        },
+        "sen2sr": {
+          "psnr_db": 42.06,
+          "ssim": 0.9654,
+          "sam_degrees": 0.976
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 56.13,
+            "ssim": 0.9986,
+            "sam_degrees": 0.205
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 47.99,
+            "ssim": 0.9949,
+            "sam_degrees": 0.669
+          },
+          "edge_energy_vs_bicubic": 0.887
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 57.62,
+            "ssim": 0.999,
+            "sam_degrees": 0.187
+          },
+          "edge_energy_vs_bicubic": 2.157
+        }
+      }
+    },
+    "karnal": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.05,
+          "ssim": 0.9142,
+          "sam_degrees": 2.659
+        },
+        "rcan": {
+          "psnr_db": 36.3,
+          "ssim": 0.9032,
+          "sam_degrees": 3.011
+        },
+        "sen2sr": {
+          "psnr_db": 36.7,
+          "ssim": 0.9166,
+          "sam_degrees": 2.722
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.26,
+            "ssim": 0.9969,
+            "sam_degrees": 0.555
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 43.36,
+            "ssim": 0.9864,
+            "sam_degrees": 1.511
+          },
+          "edge_energy_vs_bicubic": 0.861
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 51.73,
+            "ssim": 0.9973,
+            "sam_degrees": 0.553
+          },
+          "edge_energy_vs_bicubic": 2.66
+        }
+      }
+    },
+    "kolkata": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.86,
+          "ssim": 0.9183,
+          "sam_degrees": 1.488
+        },
+        "rcan": {
+          "psnr_db": 37.01,
+          "ssim": 0.9115,
+          "sam_degrees": 2.04
+        },
+        "sen2sr": {
+          "psnr_db": 37.82,
+          "ssim": 0.9233,
+          "sam_degrees": 1.511
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 52.13,
+            "ssim": 0.9971,
+            "sam_degrees": 0.32
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 43.24,
+            "ssim": 0.9883,
+            "sam_degrees": 1.454
+          },
+          "edge_energy_vs_bicubic": 0.858
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 53.36,
+            "ssim": 0.9978,
+            "sam_degrees": 0.296
+          },
+          "edge_energy_vs_bicubic": 2.231
+        }
+      }
+    },
+    "koyna": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 40.36,
+          "ssim": 0.9638,
+          "sam_degrees": 1.518
+        },
+        "rcan": {
+          "psnr_db": 39.68,
+          "ssim": 0.9561,
+          "sam_degrees": 1.776
+        },
+        "sen2sr": {
+          "psnr_db": 40.27,
+          "ssim": 0.9661,
+          "sam_degrees": 1.517
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 54.72,
+            "ssim": 0.9987,
+            "sam_degrees": 0.305
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 46.87,
+            "ssim": 0.9902,
+            "sam_degrees": 0.822
+          },
+          "edge_energy_vs_bicubic": 0.902
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 55.11,
+            "ssim": 0.9988,
+            "sam_degrees": 0.305
+          },
+          "edge_energy_vs_bicubic": 2.311
+        }
+      }
+    },
+    "leh": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 35.8,
+          "ssim": 0.9213,
+          "sam_degrees": 1.225
+        },
+        "rcan": {
+          "psnr_db": 35.12,
+          "ssim": 0.9133,
+          "sam_degrees": 1.905
+        },
+        "sen2sr": {
+          "psnr_db": 35.81,
+          "ssim": 0.9271,
+          "sam_degrees": 1.337
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 50.1,
+            "ssim": 0.9973,
+            "sam_degrees": 0.299
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 42.17,
+            "ssim": 0.989,
+            "sam_degrees": 1.433
+          },
+          "edge_energy_vs_bicubic": 0.854
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 50.79,
+            "ssim": 0.9977,
+            "sam_degrees": 0.299
+          },
+          "edge_energy_vs_bicubic": 2.395
+        }
+      }
+    },
+    "lucknow": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.32,
+          "ssim": 0.9185,
+          "sam_degrees": 1.49
+        },
+        "rcan": {
+          "psnr_db": 36.62,
+          "ssim": 0.9117,
+          "sam_degrees": 1.843
+        },
+        "sen2sr": {
+          "psnr_db": 37.24,
+          "ssim": 0.9242,
+          "sam_degrees": 1.506
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.74,
+            "ssim": 0.9973,
+            "sam_degrees": 0.307
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 43.4,
+            "ssim": 0.9889,
+            "sam_degrees": 1.171
+          },
+          "edge_energy_vs_bicubic": 0.865
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 53.05,
+            "ssim": 0.9979,
+            "sam_degrees": 0.271
+          },
+          "edge_energy_vs_bicubic": 2.199
+        }
+      }
+    },
+    "ludhiana_fields": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 44.41,
+          "ssim": 0.9813,
+          "sam_degrees": 1.228
+        },
+        "rcan": {
+          "psnr_db": 43.18,
+          "ssim": 0.9791,
+          "sam_degrees": 1.522
+        },
+        "sen2sr": {
+          "psnr_db": 44.69,
+          "ssim": 0.9827,
+          "sam_degrees": 1.216
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 59.23,
+            "ssim": 0.9993,
+            "sam_degrees": 0.248
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 49.16,
+            "ssim": 0.9969,
+            "sam_degrees": 0.992
+          },
+          "edge_energy_vs_bicubic": 0.86
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 60.53,
+            "ssim": 0.9995,
+            "sam_degrees": 0.238
+          },
+          "edge_energy_vs_bicubic": 1.986
+        }
+      }
+    },
+    "meerut_rural": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 42.02,
+          "ssim": 0.9742,
+          "sam_degrees": 1.562
+        },
+        "rcan": {
+          "psnr_db": 40.84,
+          "ssim": 0.9703,
+          "sam_degrees": 1.707
+        },
+        "sen2sr": {
+          "psnr_db": 42.08,
+          "ssim": 0.9755,
+          "sam_degrees": 1.496
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 56.95,
+            "ssim": 0.9992,
+            "sam_degrees": 0.291
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 46.88,
+            "ssim": 0.9952,
+            "sam_degrees": 0.756
+          },
+          "edge_energy_vs_bicubic": 0.863
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 57.54,
+            "ssim": 0.9992,
+            "sam_degrees": 0.29
+          },
+          "edge_energy_vs_bicubic": 2.362
+        }
+      }
+    },
+    "mumbai": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.73,
+          "ssim": 0.9302,
+          "sam_degrees": 1.115
+        },
+        "rcan": {
+          "psnr_db": 36.87,
+          "ssim": 0.9229,
+          "sam_degrees": 1.633
+        },
+        "sen2sr": {
+          "psnr_db": 37.75,
+          "ssim": 0.9361,
+          "sam_degrees": 1.141
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 52.4,
+            "ssim": 0.9977,
+            "sam_degrees": 0.234
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 43.27,
+            "ssim": 0.9897,
+            "sam_degrees": 1.24
+          },
+          "edge_energy_vs_bicubic": 0.829
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 53.61,
+            "ssim": 0.9983,
+            "sam_degrees": 0.218
+          },
+          "edge_energy_vs_bicubic": 2.097
+        }
+      }
+    },
+    "nagpur": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.09,
+          "ssim": 0.9111,
+          "sam_degrees": 1.498
+        },
+        "rcan": {
+          "psnr_db": 36.43,
+          "ssim": 0.9032,
+          "sam_degrees": 1.848
+        },
+        "sen2sr": {
+          "psnr_db": 37.07,
+          "ssim": 0.9169,
+          "sam_degrees": 1.516
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.54,
+            "ssim": 0.997,
+            "sam_degrees": 0.312
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 43.38,
+            "ssim": 0.9877,
+            "sam_degrees": 1.188
+          },
+          "edge_energy_vs_bicubic": 0.844
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.81,
+            "ssim": 0.9977,
+            "sam_degrees": 0.287
+          },
+          "edge_energy_vs_bicubic": 2.218
+        }
+      }
+    },
+    "nashik": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 40.35,
+          "ssim": 0.9684,
+          "sam_degrees": 1.191
+        },
+        "rcan": {
+          "psnr_db": 37.68,
+          "ssim": 0.9602,
+          "sam_degrees": 1.353
+        },
+        "sen2sr": {
+          "psnr_db": 40.61,
+          "ssim": 0.9709,
+          "sam_degrees": 1.187
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 55.56,
+            "ssim": 0.999,
+            "sam_degrees": 0.211
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 40.94,
+            "ssim": 0.9906,
+            "sam_degrees": 0.645
+          },
+          "edge_energy_vs_bicubic": 0.789
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 57.09,
+            "ssim": 0.9993,
+            "sam_degrees": 0.183
+          },
+          "edge_energy_vs_bicubic": 1.98
+        }
+      }
+    },
+    "nilgiris": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 38.12,
+          "ssim": 0.9477,
+          "sam_degrees": 2.013
+        },
+        "rcan": {
+          "psnr_db": 37.29,
+          "ssim": 0.9405,
+          "sam_degrees": 2.171
+        },
+        "sen2sr": {
+          "psnr_db": 38.13,
+          "ssim": 0.9516,
+          "sam_degrees": 1.996
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 52.79,
+            "ssim": 0.9983,
+            "sam_degrees": 0.382
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 44.16,
+            "ssim": 0.9913,
+            "sam_degrees": 0.899
+          },
+          "edge_energy_vs_bicubic": 0.825
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 53.55,
+            "ssim": 0.9986,
+            "sam_degrees": 0.362
+          },
+          "edge_energy_vs_bicubic": 2.458
+        }
+      }
+    },
+    "pune": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.92,
+          "ssim": 0.9194,
+          "sam_degrees": 1.376
+        },
+        "rcan": {
+          "psnr_db": 37.14,
+          "ssim": 0.9126,
+          "sam_degrees": 1.792
+        },
+        "sen2sr": {
+          "psnr_db": 37.84,
+          "ssim": 0.9243,
+          "sam_degrees": 1.394
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 52.3,
+            "ssim": 0.9973,
+            "sam_degrees": 0.285
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 43.84,
+            "ssim": 0.9896,
+            "sam_degrees": 1.252
+          },
+          "edge_energy_vs_bicubic": 0.861
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 53.56,
+            "ssim": 0.998,
+            "sam_degrees": 0.254
+          },
+          "edge_energy_vs_bicubic": 2.242
+        }
+      }
+    },
+    "rann_of_kutch": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 43.2,
+          "ssim": 0.9778,
+          "sam_degrees": 0.229
+        },
+        "rcan": {
+          "psnr_db": 33.14,
+          "ssim": 0.9635,
+          "sam_degrees": 2.153
+        },
+        "sen2sr": {
+          "psnr_db": 39.64,
+          "ssim": 0.9727,
+          "sam_degrees": 0.27
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.35,
+            "ssim": 0.9959,
+            "sam_degrees": 0.056
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 33.52,
+            "ssim": 0.9851,
+            "sam_degrees": 2.144
+          },
+          "edge_energy_vs_bicubic": 0.856
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 48.82,
+            "ssim": 0.9924,
+            "sam_degrees": 0.076
+          },
+          "edge_energy_vs_bicubic": 6.944
+        }
+      }
+    },
+    "sambhar": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 43.3,
+          "ssim": 0.9826,
+          "sam_degrees": 0.875
+        },
+        "rcan": {
+          "psnr_db": 40.41,
+          "ssim": 0.969,
+          "sam_degrees": 3.142
+        },
+        "sen2sr": {
+          "psnr_db": 43.29,
+          "ssim": 0.9838,
+          "sam_degrees": 0.906
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 57.91,
+            "ssim": 0.9994,
+            "sam_degrees": 0.199
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 43.47,
+            "ssim": 0.9859,
+            "sam_degrees": 2.9
+          },
+          "edge_energy_vs_bicubic": 0.802
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 58.63,
+            "ssim": 0.9995,
+            "sam_degrees": 0.211
+          },
+          "edge_energy_vs_bicubic": 2.134
+        }
+      }
+    },
+    "similipal": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 41.64,
+          "ssim": 0.9617,
+          "sam_degrees": 0.944
+        },
+        "rcan": {
+          "psnr_db": 40.58,
+          "ssim": 0.9586,
+          "sam_degrees": 1.073
+        },
+        "sen2sr": {
+          "psnr_db": 41.47,
+          "ssim": 0.9641,
+          "sam_degrees": 0.968
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 55.69,
+            "ssim": 0.9986,
+            "sam_degrees": 0.197
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 46.12,
+            "ssim": 0.9944,
+            "sam_degrees": 0.529
+          },
+          "edge_energy_vs_bicubic": 0.868
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 57.13,
+            "ssim": 0.999,
+            "sam_degrees": 0.186
+          },
+          "edge_energy_vs_bicubic": 2.14
+        }
+      }
+    },
+    "sundarbans": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 46.92,
+          "ssim": 0.9913,
+          "sam_degrees": 1.343
+        },
+        "rcan": {
+          "psnr_db": 42.98,
+          "ssim": 0.9811,
+          "sam_degrees": 1.878
+        },
+        "sen2sr": {
+          "psnr_db": 47.21,
+          "ssim": 0.9916,
+          "sam_degrees": 1.226
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 61.99,
+            "ssim": 0.9997,
+            "sam_degrees": 0.273
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 45.05,
+            "ssim": 0.989,
+            "sam_degrees": 1.23
+          },
+          "edge_energy_vs_bicubic": 1.016
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 62.5,
+            "ssim": 0.9997,
+            "sam_degrees": 0.301
+          },
+          "edge_energy_vs_bicubic": 2.402
+        }
+      }
+    },
+    "thanjavur": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 36.99,
+          "ssim": 0.926,
+          "sam_degrees": 1.562
+        },
+        "rcan": {
+          "psnr_db": 35.9,
+          "ssim": 0.916,
+          "sam_degrees": 1.747
+        },
+        "sen2sr": {
+          "psnr_db": 36.94,
+          "ssim": 0.932,
+          "sam_degrees": 1.576
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.48,
+            "ssim": 0.9976,
+            "sam_degrees": 0.304
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 41.48,
+            "ssim": 0.9871,
+            "sam_degrees": 0.881
+          },
+          "edge_energy_vs_bicubic": 0.818
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.48,
+            "ssim": 0.9981,
+            "sam_degrees": 0.274
+          },
+          "edge_energy_vs_bicubic": 2.312
+        }
+      }
+    },
+    "varanasi": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 37.62,
+          "ssim": 0.9135,
+          "sam_degrees": 2.102
+        },
+        "rcan": {
+          "psnr_db": 37.13,
+          "ssim": 0.9072,
+          "sam_degrees": 2.445
+        },
+        "sen2sr": {
+          "psnr_db": 37.43,
+          "ssim": 0.9177,
+          "sam_degrees": 2.161
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.79,
+            "ssim": 0.9969,
+            "sam_degrees": 0.463
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 44.94,
+            "ssim": 0.989,
+            "sam_degrees": 1.397
+          },
+          "edge_energy_vs_bicubic": 0.88
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.65,
+            "ssim": 0.9975,
+            "sam_degrees": 0.461
+          },
+          "edge_energy_vs_bicubic": 2.358
+        }
+      }
+    },
+    "vembanad": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 44.29,
+          "ssim": 0.9844,
+          "sam_degrees": 1.238
+        },
+        "rcan": {
+          "psnr_db": 40.68,
+          "ssim": 0.9526,
+          "sam_degrees": 3.78
+        },
+        "sen2sr": {
+          "psnr_db": 44.31,
+          "ssim": 0.9861,
+          "sam_degrees": 1.262
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 58.64,
+            "ssim": 0.9995,
+            "sam_degrees": 0.274
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 42.91,
+            "ssim": 0.9669,
+            "sam_degrees": 3.336
+          },
+          "edge_energy_vs_bicubic": 0.872
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 59.17,
+            "ssim": 0.9995,
+            "sam_degrees": 0.361
+          },
+          "edge_energy_vs_bicubic": 2.658
+        }
+      }
+    },
+    "wayanad": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 39.93,
+          "ssim": 0.9531,
+          "sam_degrees": 1.262
+        },
+        "rcan": {
+          "psnr_db": 38.12,
+          "ssim": 0.9462,
+          "sam_degrees": 1.384
+        },
+        "sen2sr": {
+          "psnr_db": 39.96,
+          "ssim": 0.9567,
+          "sam_degrees": 1.272
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 54.37,
+            "ssim": 0.9984,
+            "sam_degrees": 0.242
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 42.33,
+            "ssim": 0.9911,
+            "sam_degrees": 0.615
+          },
+          "edge_energy_vs_bicubic": 0.824
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 55.78,
+            "ssim": 0.9988,
+            "sam_degrees": 0.215
+          },
+          "edge_energy_vs_bicubic": 2.213
+        }
+      }
+    },
+    "demo_agriculture_punjab": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 43.3,
+          "ssim": 0.9812,
+          "sam_degrees": 1.243
+        },
+        "rcan": {
+          "psnr_db": 41.3,
+          "ssim": 0.9778,
+          "sam_degrees": 1.517
+        },
+        "sen2sr": {
+          "psnr_db": 43.59,
+          "ssim": 0.9827,
+          "sam_degrees": 1.224
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 58.36,
+            "ssim": 0.9994,
+            "sam_degrees": 0.247
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 46.08,
+            "ssim": 0.9959,
+            "sam_degrees": 0.952
+          },
+          "edge_energy_vs_bicubic": 0.798
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 59.45,
+            "ssim": 0.9995,
+            "sam_degrees": 0.24
+          },
+          "edge_energy_vs_bicubic": 1.907
+        }
+      }
+    },
+    "demo_mixed_pune": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 36.44,
+          "ssim": 0.9179,
+          "sam_degrees": 3.341
+        },
+        "rcan": {
+          "psnr_db": 36.12,
+          "ssim": 0.9109,
+          "sam_degrees": 3.531
+        },
+        "sen2sr": {
+          "psnr_db": 36.52,
+          "ssim": 0.9269,
+          "sam_degrees": 3.322
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.29,
+            "ssim": 0.9974,
+            "sam_degrees": 0.636
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 44.66,
+            "ssim": 0.9892,
+            "sam_degrees": 1.44
+          },
+          "edge_energy_vs_bicubic": 0.839
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.32,
+            "ssim": 0.998,
+            "sam_degrees": 0.637
+          },
+          "edge_energy_vs_bicubic": 2.303
+        }
+      }
+    },
+    "demo_urban_delhi": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 36.72,
+          "ssim": 0.9198,
+          "sam_degrees": 2.827
+        },
+        "rcan": {
+          "psnr_db": 36.36,
+          "ssim": 0.9126,
+          "sam_degrees": 3.013
+        },
+        "sen2sr": {
+          "psnr_db": 36.79,
+          "ssim": 0.9306,
+          "sam_degrees": 2.826
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 51.43,
+            "ssim": 0.9975,
+            "sam_degrees": 0.547
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 45.12,
+            "ssim": 0.9899,
+            "sam_degrees": 1.258
+          },
+          "edge_energy_vs_bicubic": 0.845
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 52.72,
+            "ssim": 0.9982,
+            "sam_degrees": 0.504
+          },
+          "edge_energy_vs_bicubic": 2.196
+        }
+      }
+    },
+    "demo_vegetation_western_ghats": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 39.6,
+          "ssim": 0.9486,
+          "sam_degrees": 2.119
+        },
+        "rcan": {
+          "psnr_db": 39.38,
+          "ssim": 0.9467,
+          "sam_degrees": 2.253
+        },
+        "sen2sr": {
+          "psnr_db": 39.52,
+          "ssim": 0.9515,
+          "sam_degrees": 2.163
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 53.85,
+            "ssim": 0.9982,
+            "sam_degrees": 0.424
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 49.26,
+            "ssim": 0.9952,
+            "sam_degrees": 0.878
+          },
+          "edge_energy_vs_bicubic": 0.974
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 54.55,
+            "ssim": 0.9985,
+            "sam_degrees": 0.439
+          },
+          "edge_energy_vs_bicubic": 2.324
+        }
+      }
+    },
+    "demo_water_pavana": {
+      "reduced_scale": {
+        "bicubic": {
+          "psnr_db": 48.3,
+          "ssim": 0.9905,
+          "sam_degrees": 1.479
+        },
+        "rcan": {
+          "psnr_db": 44.51,
+          "ssim": 0.9839,
+          "sam_degrees": 2.24
+        },
+        "sen2sr": {
+          "psnr_db": 48.56,
+          "ssim": 0.9911,
+          "sam_degrees": 1.508
+        }
+      },
+      "native": {
+        "bicubic": {
+          "consistency": {
+            "psnr_db": 62.44,
+            "ssim": 0.9996,
+            "sam_degrees": 0.343
+          },
+          "edge_energy_vs_bicubic": 1.0
+        },
+        "rcan": {
+          "consistency": {
+            "psnr_db": 46.47,
+            "ssim": 0.9923,
+            "sam_degrees": 1.671
+          },
+          "edge_energy_vs_bicubic": 0.891
+        },
+        "sen2sr": {
+          "consistency": {
+            "psnr_db": 62.96,
+            "ssim": 0.9996,
+            "sam_degrees": 0.401
+          },
+          "edge_energy_vs_bicubic": 2.159
+        }
+      }
+    }
+  }
+}

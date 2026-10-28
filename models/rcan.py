@@ -102,12 +102,15 @@ class RCAN(nn.Module):
     Inputs: 4 Channels (B02 Blue, B03 Green, B04 Red, B08 NIR)
     Outputs: 4 Channels at 2x spatial resolution.
     """
-    def __init__(self, n_colors: int = 4, scale: int = 2, n_feats: int = 64, n_resgroups: int = 10, n_resblocks: int = 20, conv=default_conv, residual: bool = False):
+    def __init__(self, n_colors: int = 4, scale: int = 2, n_feats: int = 64, n_resgroups: int = 10, n_resblocks: int = 20, conv=default_conv, residual: bool = False, consistent: bool = False):
         super(RCAN, self).__init__()
         if any(type(v) is not int or v < 1 for v in (n_colors, n_feats, n_resgroups, n_resblocks)):
             raise ValueError("RCAN channel and block counts must be positive integers")
         self.scale = scale
         self.residual = residual
+        # Exact consistency: the 2x2 mean of the output equals the input pixel, so the
+        # measured 10 m radiometry is preserved and only sub-pixel detail is added.
+        self.consistent = consistent
         kernel_size = 3
         reduction = 16
         
@@ -133,7 +136,11 @@ class RCAN(nn.Module):
         res = self.body(x_head)
         res = res + x_head
         out = self.tail(res)
-        return out + F.interpolate(x, scale_factor=self.scale, mode="bicubic", align_corners=False) if self.residual else out
+        if self.residual:
+            out = out + F.interpolate(x, scale_factor=self.scale, mode="bicubic", align_corners=False)
+        if self.consistent:
+            out = out + F.interpolate(x - F.avg_pool2d(out, self.scale), scale_factor=self.scale, mode="nearest")
+        return out
 
 
 class L1BSRSR:

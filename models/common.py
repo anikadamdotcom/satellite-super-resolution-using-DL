@@ -52,7 +52,7 @@ def read_checkpoint(path, task):
         raise ValueError("SR checkpoints must have four channels and a 2x scale.")
     if task == "segmentation" and (config.get("in_channels") != 8 or config.get("num_classes") != 5):
         raise ValueError("Segmentation checkpoints must have eight feature channels and five classes.")
-    allowed = {"n_colors", "scale", "n_feats", "n_resgroups", "n_resblocks", "residual"} if task == "sr" else {"in_channels", "num_classes"}
+    allowed = {"n_colors", "scale", "n_feats", "n_resgroups", "n_resblocks", "residual", "consistent"} if task == "sr" else {"in_channels", "num_classes"}
     if set(config) - allowed:
         raise ValueError("Checkpoint contains unsupported architecture options")
     if task == "sr":
@@ -62,8 +62,8 @@ def read_checkpoint(path, task):
                 raise ValueError(f"Invalid checkpoint option: {key}")
         if config["n_feats"]**2 * config["n_resgroups"] * config["n_resblocks"] > 2_000_000:
             raise ValueError("Checkpoint architecture exceeds the inference memory budget")
-        if type(config.get("residual", False)) is not bool:
-            raise ValueError("residual must be boolean")
+        if type(config.get("residual", False)) is not bool or type(config.get("consistent", False)) is not bool:
+            raise ValueError("residual and consistent must be boolean")
     state = checkpoint.get("state_dict")
     if not isinstance(state, dict) or not state or any(not isinstance(v, torch.Tensor) or not torch.isfinite(v).all() for v in state.values()):
         raise ValueError("Checkpoint tensors are missing or non-finite")

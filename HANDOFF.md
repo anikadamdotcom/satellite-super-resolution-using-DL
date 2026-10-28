@@ -2,18 +2,45 @@
 
 Written 22 October 2026 on the team's first laptop (Windows, CPU + NVIDIA T500) for the Claude Code session on the second laptop (Windows, **RTX 5050 Laptop GPU, 8 GB**). Same user: Aniruddha Kadam. Read this before doing anything.
 
-## 0. UPDATE 22 Oct 2026 (laptop 2, RTX 5050): retraining done, new model is in the app
+## 0. UPDATE 28 Oct 2026 (laptop 2, RTX 5050): final real-data RCAN (Run B) is in the app
 
-Read this section first; sections 1-6 below are the original plan, kept for context.
+Read this section first. Sections 1-6 below are the original plan, kept for context.
 
-- **Done.** RCAN retrained on real SEN2VENµS pairs (Run A, same small architecture). On the Indian test sites BENGA and KUDALIAR (2,000 patches) it beats bicubic: **+0.47 dB PSNR (shift/bias compensated), +0.09 dB raw, better than bicubic on 1638/2000 patches**. The old synthetic RCAN scores −0.29 dB on the same test. Full table: README "Real-data RCAN training" and `results/sen2venus_test_runA.json`.
-- **App now uses the new model:** `checkpoints/demo/rcan.pt` (report: `checkpoints/demo/rcan_training_report.json`). The old one is kept as `checkpoints/demo/rcan_synthetic.pt` and `checkpoints/demo/rcan_synthetic.onnx`. `rcan_model.onnx` has been re-exported. The GUI sidebar label, README, PROJECT_REPORT, REAL_ACCURACY, HF_MODEL and the showcase texts have been updated. `checkpoints/demo/training_report.json` is unchanged because it also holds the synthetic U-Net history.
-- **New code:** `download_sen2venus.py` (multi-connection, resumable, MD5; Zenodo throttles each connection to ~0.5 MB/s), `prepare_sen2venus.py` (to memory-mapped `datasets/sen2venus_npy/`), `train.py --task sr` (RCAN only, bf16 AMP, crops/flips, OneCycle cosine, `--resume`), `data.SRPatchDataset`, `evaluate_sen2venus.py`, `tests/test_sen2venus.py`. All 101+ tests passed on laptop 2.
-- **Data facts verified:** each site has `<SITE>_<TILE>_<DATE>_10m_b2b3b4b8.pt` int16 (N,4,128,128) and matching `_05m_b2b3b4b8.pt` (N,4,256,256), ×10000, band order B2,B3,B4,B8, plus `index.csv` and patch GeoPackages. VENµS and S2 are misregistered by ~1 px at 5 m, so the loss and the "compensated" metrics remove the best ±2 px shift and the per-band mean offset (applied to every method equally).
-- **Caveats:** the gain is small. Validation was best at epoch 6 of 80, and later epochs overfit to the 7 training sites. SEN2SR has not been scored on the SEN2VENµS test (needs `requirements-research.txt` env + `python evaluate_sen2venus.py --sen2sr ...`). The reduced-scale Indian benchmark (§5.4.2) and the Compare-view striping check (§5.4.3) have not been redone.
-- **Possible next steps:** a better run with more training sites (≈6-8 more), ~20 epochs at lr 1e-4, maybe n_feats=48 (check CPU speed); SEN2SR comparison; §5.4.2/§5.4.3.
-- `git pull` failed on laptop 2 ("repository not found", probably GitHub auth), so laptop 1's mapping-experiment results were not merged here.
-- Datasets (`datasets/sen2venus*`, ~34 GB) and `checkpoints/real/` stay on laptop 2 (gitignored).
+- **App model:** `checkpoints/demo/rcan.pt` = Run B (seed 42): 17 SEN2VENµS training sites, 41,704 patches, same small architecture. Report: `checkpoints/demo/rcan_training_report.json`. `rcan_model.onnx` has been re-exported. Kept for comparison: `rcan_synthetic.pt` / `rcan_synthetic.onnx` (original) and `rcan_runA.pt` (first real run, flawed).
+- **Results** (full tables in README "Real-data RCAN training"):
+  - Indian test sites, 13,039 patches, harmonised score: **+0.20 dB vs bicubic, better on 83% of patches**. Raw: +0.11 dB.
+  - Indian reduced-scale benchmark: **+0.20 dB, 38/42 scenes**, the only model that beats bicubic there.
+  - For comparison: synthetic −0.26 / −0.63 dB, Run A +0.12 / −1.57 dB, ESA SEN2SR −0.04 / −0.12 dB.
+  - Seeds 42/1/2 agree within ±0.04 dB on the test sites.
+  - Compare-view striping is gone (score 0.034 → 0.0012; `docs/compare_striping.png`).
+- **What went wrong with Run A (22 Oct) and how it was fixed.** Run A flattened Sentinel-2 contrast by 5-25% (−1.57 dB on the reduced-scale benchmark). Causes:
+  - (a) sub-pixel VENµS/S2 misregistration that the integer-shift loss left in place, which rewards blur;
+  - (b) VENµS has 5-9% less contrast than S2 at every scale, which the model copied.
+
+  Fixes:
+  - per-patch 1/8 px shift estimated in prep and applied in the loss (`models/alignment.py`);
+  - per-band radiometric harmonisation of the VENµS targets at 40 m (`*_radiometry.npy`);
+  - an RMSE consistency term to the S2 input.
+
+  The earlier "+0.47 dB" Run A figure used integer-shift compensation and rewarded matching VENµS's look. It is superseded.
+- **Pilots that didn't work** (logs in `checkpoints/real/`, not in git):
+  - strict 2x2-mean consistency layer: stays below bicubic, now opt-in `--consistent`;
+  - aligned loss with no anchor: brightness drifts, raw −2.4 dB;
+  - L1 anchor: small bias; RMSE fixed it.
+- **New/changed code:**
+  - `models/alignment.py`;
+  - `prepare_sen2venus.py` (shift + radiometry files);
+  - `data.SRPatchDataset` (shift, harmonise);
+  - `train.py --task sr` (aligned loss, RMSE consistency, `--early-stop`, `--consistent`);
+  - `evaluate_sen2venus.py` (raw / aligned / harmonised, parallel scoring, SEN2SR);
+  - `plot_compare_striping.py`;
+  - `RCAN(consistent=...)` and the matching `read_checkpoint` key;
+  - tests in `tests/test_sen2venus.py`.
+- **Environment:** `.venv-gpu` (Python 3.13, torch 2.11 cu128). SEN2SR is installed into it with `pip install --no-deps sen2sr==0.8.5 timm==1.0.30` plus `torchvision` from the cu128 index; a normal install would replace CUDA torch with a CPU build.
+- **Laptop 1's results** (`SR_COMPARISON.md`, `results/mapping_experiment.json`) were merged on 22 Oct. They describe the old synthetic RCAN.
+- **Intermittent issue:** `tests/test_pipeline.py::GuiTests::test_worker_pipeline_and_reset` crashed natively (0xC0000409) a few times on laptop 2 on 28 Oct, even with the old model and GUI. It passed in the final full run (105 tests OK). Probably environmental (Qt/driver); watch for it.
+- **Next ideas:** larger RCAN (n_feats 48-64, check CPU speed); rerun `mapping_experiment.py` with Run B outputs; more Indian test sites.
+- Data (`datasets/sen2venus*`, ~60 GB) and `checkpoints/real/` stay on laptop 2 (gitignored).
 
 ## 1. The project in one paragraph
 

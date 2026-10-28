@@ -94,38 +94,54 @@ def compensated_l1(output, target, radius=2):
     return best
 
 
-def sr_objective(output, lr, hr, args):
-    """Training/validation loss for --task sr, plus an LR-consistency term.
+def sr_objective(output, lr, hr, shift, args):
+    """Training/validation loss for --task sr.
 
-    The consistency term (2x2 average of the output vs. the Sentinel-2 input) keeps the
-    output on the input's grid and radiometry, which the compensated loss alone ignores.
+    "aligned" (default): L1 after the patch's known sub-pixel VENµS/Sentinel-2 shift and
+    per-band mean offset are removed (models/alignment.py). Integer-only compensation leaves
+    up to half a pixel of misregistration, which rewards blur. Because the aligned loss ignores
+    band means, the consistency term (smoothly downsampled output vs. the Sentinel-2 input)
+    anchors brightness and large-scale contrast to the measured input.
     """
-    main = compensated_l1(output, hr, args.shift_radius).mean() if args.loss == "compensated" else torch.nn.functional.l1_loss(output, hr)
+    from models.alignment import aligned_l1
+    if args.loss == "aligned":
+        main = aligned_l1(output, hr, shift).mean()
+    elif args.loss == "compensated":
+        main = compensated_l1(output, hr, args.shift_radius).mean()
+    else:
+        main = torch.nn.functional.l1_loss(output, hr)
     if args.lr_consistency > 0:
-        main = main + args.lr_consistency*torch.nn.functional.l1_loss(torch.nn.functional.avg_pool2d(output, 2), lr)
+        # Smooth (antialiased) downsampling approximates the Sentinel-2 footprint better than a 2x2 box.
+        down = torch.nn.functional.interpolate(output, scale_factor=.5, mode="bicubic", align_corners=False, antialias=True)
+        # RMSE (not L1): anchors the mean exactly, so overall brightness cannot drift.
+        main = main + args.lr_consistency*torch.sqrt(torch.nn.functional.mse_loss(down, lr) + 1e-12)
     return main
 
 
 @torch.inference_mode()
 def evaluate_sr(model, loader, device, args, radius=2):
-    """Mean raw and shift/bias-compensated L1 and PSNR for the model and bicubic."""
+    """Mean raw and aligned (sub-pixel shift + band offset removed) L1/PSNR for model and bicubic."""
+    from models.alignment import aligned_l1, shift_image
     model.eval()
     sums = {}
     count = 0
-    for lr, hr in loader:
-        lr, hr = lr.to(device, non_blocking=True), hr.to(device, non_blocking=True)
+    for lr, hr, shift in loader:
+        lr, hr, shift = (t.to(device, non_blocking=True) for t in (lr, hr, shift))
         with torch.autocast(device.type, dtype=torch.bfloat16, enabled=args.amp and device.type == "cuda"):
             output = model(lr)
         output = output.float().clamp(0, 6.5535)
         bicubic = torch.nn.functional.interpolate(lr, scale_factor=2, mode="bicubic", align_corners=False).clamp(0, 6.5535)
         for name, prediction in (("model", output), ("bicubic", bicubic)):
             raw_mse = ((prediction - hr)**2).mean((1, 2, 3))
-            values = dict(l1=(prediction - hr).abs().mean((1, 2, 3)), compensated_l1=compensated_l1(prediction, hr, radius),
-                          psnr=10*torch.log10(1/raw_mse.clamp(min=1e-12)))
+            diff = (shift_image(prediction, shift) - hr)[..., 4:-4, 4:-4]
+            aligned_mse = ((diff - diff.mean((2, 3), keepdim=True))**2).mean((1, 2, 3))
+            values = dict(l1=(prediction - hr).abs().mean((1, 2, 3)), aligned_l1=aligned_l1(prediction, hr, shift),
+                          psnr=10*torch.log10(1/raw_mse.clamp(min=1e-12)),
+                          aligned_psnr=10*torch.log10(1/aligned_mse.clamp(min=1e-12)))
             for key, value in values.items():
                 sums[f"{name}_{key}"] = sums.get(f"{name}_{key}", 0.0) + float(value.sum())
             if name == "model":
-                sums["objective"] = sums.get("objective", 0.0) + float(sr_objective(prediction, lr, hr, args))*len(lr)
+                sums["objective"] = sums.get("objective", 0.0) + float(sr_objective(prediction, lr, hr, shift, args))*len(lr)
         count += len(lr)
     return {key: value/count for key, value in sums.items()}
 
@@ -150,7 +166,7 @@ def train_sr_patches(args, device):
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, drop_last=True, **workers)
     val_loader = DataLoader(val_set, batch_size=args.batch_size, **workers)
     config = dict(n_colors=4, scale=2, n_feats=args.n_feats, n_resgroups=args.n_resgroups,
-                  n_resblocks=args.n_resblocks, residual=True)
+                  n_resblocks=args.n_resblocks, residual=True, consistent=args.consistent)
     if config["n_feats"]**2*config["n_resgroups"]*config["n_resblocks"] > 2_000_000:
         raise SystemExit("Architecture exceeds the app's inference budget (read_checkpoint)")
     model = RCAN(**config).to(device)
@@ -162,23 +178,24 @@ def train_sr_patches(args, device):
                                                     pct_start=min(.05, 2000/total_steps), anneal_strategy="cos",
                                                     div_factor=10, final_div_factor=100)
     output = Path(args.output)
-    history, best, start = [], float("inf"), 1
+    history, best, best_epoch, start = [], float("inf"), 0, 1
     last = output/"last_state.pt"
     if args.resume and last.is_file():
         state = torch.load(last, map_location="cpu", weights_only=True)
         model.load_state_dict(state["model"]); optimizer.load_state_dict(state["optimizer"])
         scheduler.load_state_dict(state["scheduler"])
         history, best, start = state["history"], state["best"], state["epoch"]+1
+        best_epoch = min(history, key=lambda h: h["val_loss"])["epoch"] if history else 0
         print(f"resumed after epoch {state['epoch']}", flush=True)
     for epoch in range(start, args.epochs+1):
         model.train()
         began, total, count = time.time(), 0.0, 0
-        for lr, hr in train_loader:
-            lr, hr = lr.to(device, non_blocking=True), hr.to(device, non_blocking=True)
+        for lr, hr, shift in train_loader:
+            lr, hr, shift = (t.to(device, non_blocking=True) for t in (lr, hr, shift))
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device.type, dtype=torch.bfloat16, enabled=args.amp and device.type == "cuda"):
                 prediction = model(lr)
-            loss = sr_objective(prediction.float(), lr, hr, args)
+            loss = sr_objective(prediction.float(), lr, hr, shift, args)
             if not torch.isfinite(loss):
                 raise RuntimeError("Non-finite training loss; check dataset scaling.")
             loss.backward()
@@ -191,14 +208,17 @@ def train_sr_patches(args, device):
         history.append(dict(epoch=epoch, train_loss=total/count, val_loss=val["objective"], lr=scheduler.get_last_lr()[0],
                             seconds=round(time.time()-began, 1), **{f"val_{k}": v for k, v in val.items()}))
         if val["objective"] < best:
-            best = val["objective"]
+            best, best_epoch = val["objective"], epoch
             save_checkpoint(output/"rcan.pt", model, "sr", config, source, epoch)
         torch.save(dict(model=model.state_dict(), optimizer=optimizer.state_dict(), scheduler=scheduler.state_dict(),
                         history=history, best=best, epoch=epoch), last)
         (output/"history.json").write_text(json.dumps(history, indent=2), encoding="utf-8")
         print(f"sr epoch {epoch:03d}/{args.epochs}: train={total/count:.5f} val={val['objective']:.5f} "
-              f"cL1 model/bicubic={val['model_compensated_l1']:.5f}/{val['bicubic_compensated_l1']:.5f} "
-              f"PSNR model/bicubic={val['model_psnr']:.2f}/{val['bicubic_psnr']:.2f} ({time.time()-began:.0f}s)", flush=True)
+              f"aligned PSNR model/bicubic={val['model_aligned_psnr']:.2f}/{val['bicubic_aligned_psnr']:.2f} "
+              f"raw PSNR model/bicubic={val['model_psnr']:.2f}/{val['bicubic_psnr']:.2f} ({time.time()-began:.0f}s)", flush=True)
+        if args.early_stop and epoch - best_epoch >= args.early_stop:
+            print(f"early stop: no validation improvement since epoch {best_epoch}", flush=True)
+            break
     # Test sites are scored once, with the checkpoint selected on validation.
     from models.common import read_checkpoint
     checkpoint = read_checkpoint(output/"rcan.pt", "sr")
@@ -208,8 +228,9 @@ def train_sr_patches(args, device):
                   settings={k: v for k, v in vars(args).items()}, split_sizes=dict(train=len(train_set), val=len(val_set), test=len(test_set)),
                   history=dict(sr=history), test=test,
                   evaluation_protocol=("Select by validation objective; evaluate held-out test sites once. Metrics on full "
-                                       "128->256 px patches, reflectance scale 1.0 = 10000. 'compensated' = best integer shift "
-                                       "within +-2 HR px and per-band mean offset removed, applied identically to bicubic."))
+                                       "128->256 px patches, reflectance scale 1.0 = 10000. 'aligned' = the patch's sub-pixel VENµS/Sentinel-2 "
+                                       "shift (estimated once from bicubic vs. VENµS, independent of the method) and per-band mean "
+                                       "offset removed, 4 px border excluded; applied identically to every method."))
     report["environment"] = {key: importlib.metadata.version(key) for key in ("torch", "numpy")}
     (output/"training_report.json").write_text(json.dumps(report, indent=2, allow_nan=False), encoding="utf-8")
     print(json.dumps(test, indent=2), flush=True)
@@ -253,9 +274,12 @@ def main():
     sr.add_argument("--n-feats", type=int, default=32)
     sr.add_argument("--n-resgroups", type=int, default=3)
     sr.add_argument("--n-resblocks", type=int, default=4)
-    sr.add_argument("--loss", choices=("compensated", "l1"), default="compensated")
+    sr.add_argument("--loss", choices=("aligned", "compensated", "l1"), default="aligned")
     sr.add_argument("--shift-radius", type=int, default=2)
-    sr.add_argument("--lr-consistency", type=float, default=0.1)
+    sr.add_argument("--lr-consistency", type=float, default=0.2, help="Weight of the input-consistency loss term")
+    sr.add_argument("--consistent", action="store_true",
+                    help="Exact 2x2-mean consistency layer (tested: stays below bicubic on validation)")
+    sr.add_argument("--early-stop", type=int, default=0, help="Stop after N epochs without validation improvement (0 = off)")
     sr.add_argument("--val-limit", type=int, default=2000, help="Evenly spaced validation patches (0 = all)")
     sr.add_argument("--no-amp", dest="amp", action="store_false")
     sr.add_argument("--deterministic", action="store_true")

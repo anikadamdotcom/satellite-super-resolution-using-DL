@@ -54,16 +54,21 @@ class SRPatchDataset(Dataset):
 
     Files: <root>/<split>/*_lr.npy (N,H,W,4) and matching *_hr.npy (N,2H,2W,4), uint16.
     Training crops a random LR window of `crop` pixels and applies flips/rot90.
-    Returns (lr, hr) float tensors scaled by NORMALIZATION, CHW.
+    Optional *_radiometry.npy (N,2,4) per-band gain/offset is applied to HR when `harmonise`
+    (default), so targets keep VENµS detail but Sentinel-2 radiometry.
+    Optional *_shift.npy (N,2) holds each patch's sub-pixel HR-vs-LR shift (zeros if absent).
+    Returns (lr, hr, shift): float tensors scaled by NORMALIZATION, CHW, and shift (2,) in HR px,
+    rotated/flipped along with the patch.
     """
-    def __init__(self, root, split="train", crop=None, augment=False):
+    def __init__(self, root, split="train", crop=None, augment=False, harmonise=True):
         if split not in ("train", "val", "test"):
             raise ValueError("split must be train, val or test")
-        self.crop, self.augment = crop, augment
-        self.paths, self.index, self._open = [], [], {}
+        self.crop, self.augment, self.harmonise = crop, augment, harmonise
+        self.paths, self.index, self.shifts, self.radiometry, self._open = [], [], [], [], {}
         size = None
         for lr_path in sorted((Path(root)/split).glob("*_lr.npy")):
             hr_path = lr_path.with_name(lr_path.name[:-len("_lr.npy")] + "_hr.npy")
+            shift_path = lr_path.with_name(lr_path.name[:-len("_lr.npy")] + "_shift.npy")
             lr = np.load(lr_path, mmap_mode="r")
             hr = np.load(hr_path, mmap_mode="r")
             if (lr.dtype != np.uint16 or hr.dtype != np.uint16 or lr.ndim != 4 or lr.shape[-1] != 4
@@ -72,8 +77,17 @@ class SRPatchDataset(Dataset):
             if size not in (None, lr.shape[1:3]):
                 raise ValueError("All LR patches must have the same dimensions for batching")
             size = lr.shape[1:3]
+            shifts = np.load(shift_path) if shift_path.exists() else np.zeros((lr.shape[0], 2), np.float32)
+            if shifts.shape != (lr.shape[0], 2) or not np.isfinite(shifts).all():
+                raise ValueError(f"{shift_path.name}: expected finite (N, 2) shifts")
             self.index += [(len(self.paths), row) for row in range(lr.shape[0])]
             self.paths.append((lr_path, hr_path))
+            self.shifts.append(shifts.astype(np.float32))
+            radio_path = lr_path.with_name(lr_path.name[:-len("_lr.npy")] + "_radiometry.npy")
+            radio = np.load(radio_path) if radio_path.exists() else np.tile(np.array([[1.], [0.]], np.float32), (lr.shape[0], 1, 4))
+            if radio.shape != (lr.shape[0], 2, 4) or not np.isfinite(radio).all():
+                raise ValueError(f"{radio_path.name}: expected finite (N, 2, 4) gain/offset")
+            self.radiometry.append(radio.astype(np.float32))
             del lr, hr
         if not self.index:
             raise ValueError(f"No *_lr.npy patches in {root}/{split}.")
@@ -101,20 +115,36 @@ class SRPatchDataset(Dataset):
         lr, hr = self._open[file]
         return np.array(lr[row]), np.array(hr[row])
 
+    def shift(self, index):
+        file, row = self.index[index]
+        return self.shifts[file][row]
+
+    def harmonised_hr(self, index, hr=None):
+        """VENµS reference rescaled per band to Sentinel-2 radiometry (float32, HWC)."""
+        file, row = self.index[index]
+        hr = self.arrays(index)[1] if hr is None else hr
+        gain, offset = self.radiometry[file][row]
+        return np.clip(hr.astype(np.float32)*gain + offset, 0, 65535)
+
     def __getitem__(self, index):
+        from models.alignment import augment_shift
         lr, hr = self.arrays(index)
+        if self.harmonise:
+            hr = self.harmonised_hr(index, hr)
+        shift = self.shift(index)
         if self.crop:
             limit = lr.shape[0] - self.crop
             y, x = (np.random.randint(0, limit + 1, 2) if self.augment else (limit//2, limit//2))
             lr = lr[y:y+self.crop, x:x+self.crop]
             hr = hr[2*y:2*(y+self.crop), 2*x:2*(x+self.crop)]
         if self.augment:
-            k = np.random.randint(4)
+            k, flip = np.random.randint(4), np.random.rand() < .5
             lr, hr = np.rot90(lr, k), np.rot90(hr, k)
-            if np.random.rand() < .5:
+            if flip:
                 lr, hr = lr[:, ::-1], hr[:, ::-1]
+            shift = augment_shift(shift, k, flip)
         to_tensor = lambda a: torch.from_numpy(np.moveaxis(a.astype(np.float32)/NORMALIZATION, -1, 0).copy())
-        return to_tensor(lr), to_tensor(hr)
+        return to_tensor(lr), to_tensor(hr), torch.tensor(shift, dtype=torch.float32)
 
 
 class SatelliteDataset(Dataset):

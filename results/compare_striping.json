@@ -1,0 +1,95 @@
+{
+  "old_synthetic": {
+    "mean_striping": 0.0335,
+    "mean_change": 30.5,
+    "scenes": [
+      {
+        "scene": "sentinel2_agriculture_punjab_2023-12-03",
+        "striping": 0.009,
+        "mean_change": 19.3
+      },
+      {
+        "scene": "sentinel2_mixed_pune_2024-02-28",
+        "striping": 0.0088,
+        "mean_change": 49.5
+      },
+      {
+        "scene": "sentinel2_urban_delhi_2023-12-05",
+        "striping": 0.0078,
+        "mean_change": 48.3
+      },
+      {
+        "scene": "sentinel2_vegetation_western_ghats_2023-12-30",
+        "striping": 0.0545,
+        "mean_change": 23.5
+      },
+      {
+        "scene": "sentinel2_water_pavana_2024-02-28",
+        "striping": 0.0873,
+        "mean_change": 11.9
+      }
+    ]
+  },
+  "runA": {
+    "mean_striping": 0.0008,
+    "mean_change": 30.8,
+    "scenes": [
+      {
+        "scene": "sentinel2_agriculture_punjab_2023-12-03",
+        "striping": 0.0009,
+        "mean_change": 30.3
+      },
+      {
+        "scene": "sentinel2_mixed_pune_2024-02-28",
+        "striping": 0.0005,
+        "mean_change": 36.6
+      },
+      {
+        "scene": "sentinel2_urban_delhi_2023-12-05",
+        "striping": 0.0005,
+        "mean_change": 35.4
+      },
+      {
+        "scene": "sentinel2_vegetation_western_ghats_2023-12-30",
+        "striping": 0.0013,
+        "mean_change": 17.2
+      },
+      {
+        "scene": "sentinel2_water_pavana_2024-02-28",
+        "striping": 0.0007,
+        "mean_change": 34.5
+      }
+    ]
+  },
+  "runB": {
+    "mean_striping": 0.0012,
+    "mean_change": 21.9,
+    "scenes": [
+      {
+        "scene": "sentinel2_agriculture_punjab_2023-12-03",
+        "striping": 0.0013,
+        "mean_change": 14.2
+      },
+      {
+        "scene": "sentinel2_mixed_pune_2024-02-28",
+        "striping": 0.0002,
+        "mean_change": 31.8
+      },
+      {
+        "scene": "sentinel2_urban_delhi_2023-12-05",
+        "striping": 0.0002,
+        "mean_change": 31.4
+      },
+      {
+        "scene": "sentinel2_vegetation_western_ghats_2023-12-30",
+        "striping": 0.0003,
+        "mean_change": 20.7
+      },
+      {
+        "scene": "sentinel2_water_pavana_2024-02-28",
+        "striping": 0.0039,
+        "mean_change": 11.3
+      }
+    ]
+  }
+}

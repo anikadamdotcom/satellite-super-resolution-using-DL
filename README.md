@@ -8,7 +8,7 @@ The demonstration inputs in `demo_images/` are **genuine Sentinel-2 L2A crops** 
 
 The default land-cover detector combines **Hugging Face SegFormer-B0 and OpenEarthMap SparseMask**, pretrained on real labeled imagery. It detects from the original image and applies NIR checks only to measured satellite bands. Roads, buildings, vegetation, water, bare land and developed space remain distinct. The fixed eight-image LoveDA audit improved from **77.17% to 79.80% pixel accuracy**; the requested 85% threshold is **not met**. See [Hugging Face integration and full limitations](HF_MODEL.md). No accuracy guarantee applies to arbitrary uploads.
 
-The app's RCAN (`checkpoints/demo/rcan.pt`) is **trained on real image pairs**: Sentinel-2 10 m patches matched with same-day VENµS 5 m images (SEN2VENµS dataset). On two held-out Indian sites it beats bicubic by a small margin (+0.47 dB PSNR after correcting for sensor misregistration, +0.09 dB raw); see [Real-data RCAN training](#real-data-rcan-training-sen2venµs). The earlier synthetic-trained RCAN is kept as `checkpoints/demo/rcan_synthetic.pt`; on the same real test it scored *below* bicubic. The optional U-Net is still trained on procedural scenes only.
+The app's RCAN (`checkpoints/demo/rcan.pt`) is **trained on real image pairs**: Sentinel-2 10 m patches matched with same-day VENµS 5 m images (SEN2VENµS dataset, 17 training sites). On two held-out Indian sites it beats bicubic by a small margin: **+0.20 dB PSNR, better on 83% of 13,039 patches**. It is also the only model tested that beats bicubic on the Indian reduced-scale benchmark (+0.20 dB, 38 of 42 scenes). It keeps Sentinel-2's contrast and brightness. See [Real-data RCAN training](#real-data-rcan-training-sen2venµs). Earlier models are kept for comparison: `rcan_synthetic.pt` (procedural data, below bicubic on real images) and `rcan_runA.pt` (first real-data run, which flattened contrast). The optional U-Net is still trained on procedural scenes only.
 
 ![Application preview](docs/app_preview.png)
 
@@ -40,32 +40,61 @@ Inference inputs are capped at 1024 pixels on their longest side. Larger rasters
 
 ## Real-data RCAN training (SEN2VENµS)
 
-The app's RCAN was trained on SEN2VENµS (Michel et al., 2022, *Data* 7(7):96; Zenodo record 6514159, CC BY-NC 4.0): Sentinel-2 10 m B02/B03/B04/B08 patches (128x128) paired with VENµS 5 m patches (256x256) acquired the same day. Sites are split so no site appears in two splits:
+The app's RCAN was trained on SEN2VENµS (Michel et al., 2022, *Data* 7(7):96; Zenodo record 6514159, CC BY-NC 4.0): Sentinel-2 10 m B02/B03/B04/B08 patches (128x128) paired with VENµS 5 m patches (256x256) acquired the same day. No site appears in two splits:
 
 | Split | Sites | Patches |
 | --- | --- | ---: |
-| Train | ATTO, ESTUAMAR, SUDOUE-4, K34-AMAZ, MAD-AMBO, LERIDA-1, JAM2018 | 11,745 |
+| Train | ANJI, ATTO, BAMBENW2, ES-LTERA, ESGISB-1, ESTUAMAR, FGMANAUS, FR-LQ1, JAM2018, K34-AMAZ, LERIDA-1, MAD-AMBO, NARYN, SO2, SUDOUE-4, SUDOUE-5, SUDOUE-6 | 41,704 |
 | Validation | ALSACE | 2,647 |
 | Test | BENGA (West Bengal, India), KUDALIAR (Telangana, India) | 13,039 |
 
 ```powershell
-python download_sen2venus.py          # ~17 GB, resumable, MD5-checked
-python prepare_sen2venus.py           # -> datasets/sen2venus_npy/{train,val,test}
-python train.py --task sr --data datasets/sen2venus_npy --output checkpoints/real/runA --epochs 80 --batch-size 16 --crop 96 --lr 2e-4
-python evaluate_sen2venus.py --models old_synthetic=checkpoints/demo/rcan_synthetic.pt new_real=checkpoints/demo/rcan.pt
+python download_sen2venus.py      # the 20 sites above; resumable, MD5-checked, ~37 GB
+python prepare_sen2venus.py       # -> datasets/sen2venus_npy, with per-patch shift and radiometry
+python train.py --task sr --data datasets/sen2venus_npy --output checkpoints/real/runB_s42 --epochs 25 --early-stop 6 --batch-size 16 --crop 96 --lr 1e-4 --seed 42
+python evaluate_sen2venus.py --models old_synthetic=checkpoints/demo/rcan_synthetic.pt runA=checkpoints/demo/rcan_runA.pt runB=checkpoints/demo/rcan.pt --sen2sr --limit 0
+python compare_sr_models.py --rcan checkpoints/demo/rcan.pt --output results/sr_comparison_runB.json
+python plot_compare_striping.py old_synthetic=checkpoints/demo/rcan_synthetic.pt runA=checkpoints/demo/rcan_runA.pt runB=checkpoints/demo/rcan.pt
 ```
 
-Same architecture as before (32 features, 3 residual groups x 4 blocks, bicubic skip, under 1 M parameters), so CPU and ONNX speed are unchanged. VENµS and Sentinel-2 images are misregistered by about one 5 m pixel and differ slightly in band response, so the training loss is a **shift- and bias-compensated L1**: the best integer shift within ±2 px and each band's mean offset are removed before scoring, as in the PROBA-V challenge's cPSNR. A weak term (weight 0.1) keeps the 2x2 average of the output equal to the Sentinel-2 input. This way the model cannot learn to shift or recolour the image. Trained on an RTX 5050 Laptop GPU (bf16 mixed precision, ~60 s/epoch). The checkpoint was selected by validation loss at **epoch 6 of 80**: later epochs kept improving on training sites but not on the validation site.
+The architecture is the same small RCAN as before (32 features, 3 residual groups x 4 blocks, bicubic skip, under 1 M parameters), so CPU and ONNX speed are unchanged.
 
-Held-out test (2,000 evenly spaced patches from BENGA and KUDALIAR, scored against the real VENµS 5 m image, data range 10000; `results/sen2venus_test_runA.json`):
+**Two problems with the raw pairs, and how training handles them.** A first run (Run A, kept as `rcan_runA.pt`) scored well against VENµS but flattened Sentinel-2 contrast by 5-25% on Indian scenes. Two things caused this:
 
-| Method | PSNR raw | PSNR compensated | Gain vs bicubic (compensated) | Patches better than bicubic | SSIM compensated | SAM compensated |
+1. **Misregistration.** VENµS and Sentinel-2 are offset by fractions of a 5 m pixel (training sites: ~0.3-0.5 px on average). With a leftover sub-pixel offset, blurring lowers the loss. `prepare_sen2venus.py` estimates each patch's shift to 1/8 pixel, and the loss compares the prediction with the reference after applying exactly that shift (`models/alignment.py`).
+2. **Radiometry.** At every scale from 10 to 40 m, VENµS images have 5-9% less contrast than Sentinel-2 in all four bands. That is a sensor difference, not detail, and a model trained on raw VENµS learns to flatten Sentinel-2. Each reference patch is rescaled per band to Sentinel-2's mean and contrast, measured at 40 m. The model therefore learns VENµS's fine spatial detail on Sentinel-2's radiometry.
+
+The loss is L1 after alignment, with each band's mean offset removed. An RMSE term keeps the output, smoothly downsampled to 10 m, equal to the Sentinel-2 input. This anchors brightness, which the aligned loss alone ignores. A strict 2x2-mean constraint (`--consistent`) was also tried; it stayed below bicubic on validation and is off by default. Training ran on an RTX 5050 Laptop GPU (bf16, ~3 min/epoch), with early stopping on validation. Three seeds were trained; the one with the lowest validation loss (seed 42, epoch 5) is in the app.
+
+**Held-out test sites** (all 13,039 patches; data range 10000; `results/sen2venus_test_full.json`). *Raw* compares with VENµS as it is. *Aligned* applies the patch's sub-pixel shift (estimated once from bicubic, the same for every method) and removes band offsets. *Harmonised* additionally puts the reference on Sentinel-2 contrast. Harmonised is the main score, because the app works on Sentinel-2 data.
+
+| Method | Harmonised PSNR gain vs bicubic | Patches better | Aligned gain | Raw gain | SSIM (harm.) | SAM (harm.) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Bicubic | 39.08 dB | 40.09 dB | 0 | n/a | 0.9664 | 1.974° |
-| Old RCAN (synthetic) | 38.83 dB | 39.80 dB | −0.29 dB | 6 / 2000 | 0.9630 | 2.062° |
-| **New RCAN (SEN2VENµS)** | **39.17 dB** | **40.55 dB** | **+0.47 dB** | **1638 / 2000** | **0.9697** | **1.826°** |
+| Bicubic (40.54 dB) | 0 | n/a | 0 | 0 | 0.9684 | 1.896° |
+| Synthetic RCAN | −0.26 dB | 2% | −0.25 dB | −0.25 dB | 0.9659 | 1.965° |
+| Run A | +0.12 dB | 69% | +0.51 dB | +0.10 dB | 0.9706 | 1.779° |
+| ESA SEN2SRLite (4x, averaged to 5 m) | −0.04 dB | 31% | −0.06 dB | −0.07 dB | 0.9679 | 1.875° |
+| **Run B (app)** | **+0.20 dB** | **83%** | +0.18 dB | **+0.11 dB** | 0.9703 | 1.804° |
 
-The gain is similar on both sites (BENGA +0.48 dB, KUDALIAR +0.46 dB). Limits: the improvement is small, as the literature expects at 2x. Most of the raw error is sensor misregistration that no method can fix. VENµS is a different sensor, so this measures "closer to a real 5 m image", not recovery of objects smaller than 10 m. ESA's SEN2SR has not yet been scored on this test. Output remains derived imagery and is labelled as such in exports.
+Run A wins the *aligned* score because it learned VENµS's lower contrast, which matches the raw reference but is wrong for Sentinel-2 input. Per site, Run B's harmonised gain is +0.34 dB on KUDALIAR but only +0.03 dB on BENGA.
+
+**Indian reduced-scale benchmark** (42 real Sentinel-2 scenes: each 10 m image area-averaged to 20 m, upsampled back and scored against the real 10 m image; `results/sr_comparison_*.json`):
+
+| Method | PSNR gain vs bicubic | Scenes better | Output averaged back to 10 m vs input (PSNR) | Edge energy vs bicubic |
+| --- | ---: | ---: | ---: | ---: |
+| Bicubic | 0 | n/a | 53.6 dB | 1.00 |
+| Synthetic RCAN | −0.63 dB | 2 / 42 | 55.1 dB | 2.95 |
+| Run A | −1.57 dB | 0 / 42 | 43.9 dB | 0.86 |
+| ESA SEN2SRLite | −0.12 dB | 15 / 42 | 54.5 dB | 2.39 |
+| **Run B (app)** | **+0.20 dB** | **38 / 42** | **54.7 dB** | 1.70 |
+
+Seed spread for Run B: +0.19 to +0.21 dB on the test sites, and +0.20 to +0.28 dB on the reduced-scale benchmark (seeds 42, 1, 2).
+
+**Compare view.** `docs/compare_striping.png` shows the change-vs-bicubic map on the five demo scenes. The synthetic RCAN's regular 2-pixel stripes (striping score 0.034) are gone in Run B (0.0012). Run A's broad shifts over water and fields are gone too: Run B changes only edges and features (mean change 22 vs 31 reflectance units).
+
+![Change vs bicubic for the three RCAN versions](docs/compare_striping.png)
+
+**Limits.** The gains are small (about 0.1-0.3 dB), as the literature expects at 2x. VENµS is a different sensor, so this measures "closer to a real 5 m image after correcting known sensor differences", not recovery of objects smaller than 10 m. The harmonisation and alignment are estimated from the data and are themselves approximations. Only two test sites exist in India, and the gain varies between them. The reduced-scale benchmark uses a synthetic area-average degradation. Output remains derived imagery and is labelled as such in exports.
 
 ## Reproduce the synthetic learning experiment
 

@@ -6,7 +6,9 @@ Input (from download_sen2venus.py): datasets/sen2venus/<SITE>/<SITE>/
 Both are reflectance x 10000 in band order B2, B3, B4, B8 (the project convention).
 
 Output: datasets/sen2venus_npy/<split>/<SITE>_<TILE>_<DATE>_{lr,hr}.npy as uint16 NHWC
-plus <split>/patches.csv (site, tile, date, file, index, negative fraction, estimated shift).
+plus *_shift.npy (N,2) sub-pixel VENµS-vs-Sentinel-2 shift per patch (models/alignment.py)
+*_radiometry.npy (N,2,4) per-band gain/offset putting VENµS on Sentinel-2 radiometry,
+and <split>/patches.csv (site, tile, date, file, index, negative fraction, shift).
 
 Small negative reflectances (dark water, atmospheric-correction noise) are clipped to 0.
 Patches are dropped when more than --max-negative of their pixels are negative, when any
@@ -23,19 +25,30 @@ import torch
 import torch.nn.functional as F
 
 from download_sen2venus import SPLITS
+from models.alignment import estimate_shift, radiometric_match
 
 PATTERN = re.compile(r"^(?P<site>.+)_(?P<tile>\d{2}[A-Z]{3})_(?P<date>\d{4}-\d{2}-\d{2})_10m_b2b3b4b8\.pt$")
 
 
-def estimate_shift(lr, hr, radius=3, margin=16):
-    """Integer HR-pixel shift (dy, dx) that best aligns HR to bicubic-upsampled LR."""
-    up = F.interpolate(lr, scale_factor=2, mode="bicubic", align_corners=False)
-    errors = torch.stack([
-        (torch.roll(hr, (dy, dx), (2, 3)) - up)[..., margin:-margin, margin:-margin].abs().mean((1, 2, 3))
-        for dy in range(-radius, radius + 1) for dx in range(-radius, radius + 1)], 1)
-    index = errors.argmin(1)
-    side = 2 * radius + 1
-    return (index // side - radius).tolist(), (index % side - radius).tolist()
+def estimate_shifts(lr, hr, chunk=64):
+    """Sub-pixel HR-vs-Sentinel-2 shift per patch (N,2 float32), see models/alignment.py."""
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    out = []
+    for start in range(0, lr.shape[0], chunk):
+        a = lr[start:start+chunk].float().clamp(min=0).to(device) / 1e4
+        b = hr[start:start+chunk].float().clamp(min=0).to(device) / 1e4
+        out.append(estimate_shift(a, b).cpu())
+    return torch.cat(out).numpy().astype(np.float32)
+
+
+def estimate_radiometry(lr, hr, shifts, chunk=64):
+    """Per-patch, per-band [gain, offset] (N,2,4) that put VENµS on Sentinel-2 radiometry."""
+    out = []
+    for start in range(0, lr.shape[0], chunk):
+        a = lr[start:start+chunk].float().clamp(min=0)
+        b = hr[start:start+chunk].float().clamp(min=0)
+        out.append(radiometric_match(a, b, torch.from_numpy(shifts[start:start+chunk])))
+    return torch.cat(out).numpy().astype(np.float32)
 
 
 def patch_filter(lr, hr, max_negative):
@@ -82,14 +95,17 @@ def prepare(source, output, splits, max_negative=0.1):
                     continue
                 index = keep.nonzero().flatten()
                 lr, hr, neg = lr[index], hr[index], neg[index]
-                dy, dx = estimate_shift(lr.float().clamp(min=0) / 1e4, hr.float().clamp(min=0) / 1e4)
+                shifts = estimate_shifts(lr, hr)
                 stem = lr_path.name.replace("_10m_b2b3b4b8.pt", "")
                 np.save(folder / f"{stem}_lr.npy", to_uint16_nhwc(lr))
                 np.save(folder / f"{stem}_hr.npy", to_uint16_nhwc(hr))
+                np.save(folder / f"{stem}_shift.npy", shifts)
+                np.save(folder / f"{stem}_radiometry.npy", estimate_radiometry(lr, hr, shifts))
                 for row, original in enumerate(index.tolist()):
                     rows.append(dict(site=site, tile=match["tile"], date=match["date"], file=stem, row=row,
                                      source_index=original, negative_fraction=round(float(neg[row]), 5),
-                                     shift_dy=dy[row], shift_dx=dx[row]))
+                                     shift_dy=round(float(shifts[row, 0]), 3),
+                                     shift_dx=round(float(shifts[row, 1]), 3)))
                 kept += len(index)
             print(f"{split:5s} {site:10s} kept {kept}/{total} patches from {len(files)} acquisitions", flush=True)
             summary[site] = dict(split=split, kept=kept, total=total)

@@ -21,7 +21,9 @@ from pathlib import Path
 RECORD = "https://zenodo.org/api/records/6514159"
 FILE_URL = "https://zenodo.org/records/6514159/files/{name}"
 SPLITS = {
-    "train": ["ATTO", "ESTUAMAR", "SUDOUE-4", "K34-AMAZ", "MAD-AMBO", "LERIDA-1", "JAM2018"],
+    "train": ["ATTO", "ESTUAMAR", "SUDOUE-4", "K34-AMAZ", "MAD-AMBO", "LERIDA-1", "JAM2018",
+              "NARYN", "ANJI", "SO2", "FGMANAUS", "ES-LTERA", "SUDOUE-5", "BAMBENW2", "ESGISB-1",
+              "SUDOUE-6", "FR-LQ1"],
     "val": ["ALSACE"],
     "test": ["BENGA", "KUDALIAR"],
 }

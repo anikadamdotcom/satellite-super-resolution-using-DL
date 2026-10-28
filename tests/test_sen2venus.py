@@ -56,7 +56,8 @@ class Sen2VenusTests(unittest.TestCase):
             np.save(folder/"x_lr.npy", lr); np.save(folder/"x_hr.npy", hr)
             data = SRPatchDataset(td, "train", crop=16, augment=True)
             for index in range(3):
-                small, large = data[index]
+                small, large, shift = data[index]
+                self.assertEqual(tuple(shift.shape), (2,))
                 self.assertEqual((tuple(small.shape), tuple(large.shape)), ((4, 16, 16), (4, 32, 32)))
                 # The HR crop must stay aligned with the LR crop through every augmentation.
                 torch.testing.assert_close(torch.nn.functional.avg_pool2d(large[None], 2)[0], small)
@@ -68,6 +69,52 @@ class Sen2VenusTests(unittest.TestCase):
             np.save(folder/"x_hr.npy", hr[:, :-2])
             with self.assertRaises(ValueError):
                 SRPatchDataset(td, "train")
+
+    def test_subpixel_alignment_estimates_and_follows_augmentation(self):
+        from models.alignment import shift_image, estimate_shift, augment_shift, aligned_l1
+        torch.manual_seed(0)
+        base = torch.nn.functional.interpolate(torch.rand(2, 4, 16, 16), size=64, mode="bicubic", align_corners=False)
+        true = torch.tensor([[0.625, -1.25], [-0.5, 0.375]])
+        hr = shift_image(base, true)
+        torch.testing.assert_close(estimate_shift(torch.nn.functional.avg_pool2d(base, 2), hr), true)
+        self.assertLess(float(aligned_l1(base + .01, hr, true).max()), 1e-5)
+        image, moved = base[0].permute(1, 2, 0).numpy(), hr[0].permute(1, 2, 0).numpy()
+        for k in range(4):
+            for flip in (False, True):
+                a, b = np.rot90(image, k), np.rot90(moved, k)
+                if flip:
+                    a, b = a[:, ::-1], b[:, ::-1]
+                out = shift_image(torch.from_numpy(a.copy()).permute(2, 0, 1)[None], torch.tensor([augment_shift(true[0], k, flip)]))
+                torch.testing.assert_close(out[0, :, 6:-6, 6:-6], torch.from_numpy(b.copy()).permute(2, 0, 1)[:, 6:-6, 6:-6], atol=1e-5, rtol=0)
+
+    def test_radiometric_match_restores_sentinel2_contrast_and_mean(self):
+        from models.alignment import radiometric_match
+        torch.manual_seed(1)
+        hr = 2000 + 800*torch.nn.functional.interpolate(torch.rand(3, 4, 8, 8), size=64, mode="bicubic", align_corners=False)
+        lr = torch.nn.functional.avg_pool2d(hr, 2)
+        venus = .9*hr + 50                                          # VENµS-like: 10% less contrast, offset
+        gain, offset = radiometric_match(lr, venus, torch.zeros(3, 2)).unbind(1)
+        torch.testing.assert_close(gain, torch.full_like(gain, 1/.9), rtol=1e-3, atol=0)
+        torch.testing.assert_close(venus*gain[..., None, None] + offset[..., None, None], hr, rtol=0, atol=.5)
+        flat = radiometric_match(torch.full((1, 4, 32, 32), 500.), torch.full((1, 4, 64, 64), 480.), torch.zeros(1, 2))
+        torch.testing.assert_close(flat[:, 0], torch.ones(1, 4))    # flat patch keeps gain 1
+
+    def test_striping_score_detects_two_pixel_stripes(self):
+        from plot_compare_striping import striping
+        rng = np.random.default_rng(0)
+        smooth = rng.normal(size=(64, 64)).cumsum(0).cumsum(1)
+        stripes = smooth + 20*np.tile([1., -1.], 32)[None, :]
+        self.assertLess(striping(smooth), .01)
+        self.assertGreater(striping(stripes), .2)
+
+    def test_consistent_rcan_preserves_input_at_10m(self):
+        from models.rcan import RCAN
+        model = RCAN(n_feats=8, n_resgroups=1, n_resblocks=1, residual=True, consistent=True).eval()
+        torch.nn.init.normal_(model.tail[-1].weight, std=.1)
+        x = torch.rand(1, 4, 12, 12)
+        with torch.no_grad():
+            y = model(x)
+        torch.testing.assert_close(torch.nn.functional.avg_pool2d(y, 2), x, atol=1e-6, rtol=0)
 
     def test_compensated_l1_ignores_small_shifts_and_band_offsets(self):
         target = torch.rand(2, 4, 32, 32)
@@ -91,10 +138,11 @@ class Sen2VenusTests(unittest.TestCase):
             checkpoint = read_checkpoint(Path(td)/"out/rcan.pt", "sr")
             self.assertIn("SEN2VENµS", checkpoint["data_source"])
             self.assertEqual(checkpoint["model_config"]["n_feats"], 32)
+            self.assertFalse(checkpoint["model_config"]["consistent"])  # opt-in only (--consistent)
             report = json.loads((Path(td)/"out/training_report.json").read_text(encoding="utf-8"))
             self.assertEqual(report["split_sizes"], dict(train=4, val=4, test=4))
             self.assertEqual(report["sites"]["test"], ["CCC"])
-            self.assertIn("bicubic_compensated_l1", report["test"])
+            self.assertIn("bicubic_aligned_psnr", report["test"])
             self.assertFalse((Path(td)/"out/unet.pt").exists())
 
 
