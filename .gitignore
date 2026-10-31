@@ -28,3 +28,8 @@ desktop.ini
 .idea/
 .vscode/
 ~$*
+
+# Local AI-assistant instructions
+AGENTS.md
+CLAUDE.md
+.claude/
